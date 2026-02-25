@@ -61,15 +61,24 @@ Add whatever helps you do your job. This is your cheat sheet.
 - **Lab Dir:** research-lab/
 - **Agents:** research-lab/agents/
 
-### Agents
+### Research Agents (Elite Experts)
 
-| ID | Name | Role |
-|----|------|------|
-| main | Jarvis | Lab Director |
-| ra-core | Core RA | General research |
-| ra-code | Code RA | Code/implementation |
-| ra-data | Data RA | Data analysis |
-| ra-review | Review RA | Literature review |
+Each agent is a versatile research expert, not narrowly specialized.
+
+| Agent | Inspired By | Expertise |
+|-------|-------------|-----------|
+| main / Jarvis | Lab Director | Coordination, oversight |
+| sglang | merrymercy (Lianmin Zheng) | LLM serving, compilers, distributed systems |
+| xgboost | tqchen (Tianqi Chen) | ML systems, optimization, scalable training |
+| flashinfer | yzh119 (Zihao Ye) | Kernel optimization, LLM deployment, graph ML |
+| flashattn | tridao (Tri Dao) | Efficient attention, ML theory, HPC |
+
+### pkbllm Skills Framework
+
+- **Repo:** https://github.com/uv-xiao/pkbllm
+- **Purpose:** Reusable instruction sets for LLM-human interaction
+- **Categories:** common/, productivity/, knowledge/, human/, bootstrap/
+- **Usage:** `npx skills add . --list` to discover, `pkb_agents_md.py assemble` to inject
 
 ### Models
 
