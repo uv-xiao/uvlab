@@ -19,10 +19,10 @@ Each agent is named after groundbreaking open-source projects and inspired by th
 
 | Agent | Inspired By | Key Projects | Expertise |
 |-------|-------------|--------------|-----------|
-| **SGLang** | merrymercy (Lianmin Zheng) | SGLang, FastChat, Vicuna | LLM serving, compilers, distributed systems |
-| **XGBoost** | tqchen (Tianqi Chen) | XGBoost, TVM, DMLC | ML systems, optimization, scalable training |
-| **FlashInfer** | yzh119 (Zihao Ye) | FlashInfer, MLC-LLM, DGL | Kernel optimization, LLM deployment, graph ML |
-| **FlashAttn** | tridao (Tri Dao) | Flash Attention, Princeton CS | Efficient attention, ML theory, HPC |
+| **Lianmin** | merrymercy (Lianmin Zheng) | SGLang, FastChat, Vicuna | LLM serving, compilers, distributed systems |
+| **Tianqi** | tqchen (Tianqi Chen) | XGBoost, TVM, DMLC | ML systems, optimization, scalable training |
+| **Zihao** | yzh119 (Zihao Ye) | FlashInfer, MLC-LLM, DGL | Kernel optimization, LLM deployment, graph ML |
+| **Tri** | tridao (Tri Dao) | Flash Attention, Princeton CS | Efficient attention, ML theory, HPC |
 
 ## Skills Framework (pkbllm)
 
@@ -91,18 +91,18 @@ Then open http://localhost:3000 and connect with:
 ### Spawning Research Agents
 
 ```javascript
-// Example: Research and implement efficient attention
+// Example: Research and implement efficient attention (Tri)
 sessions_spawn({
   agentId: "main",
   task: "Research flash attention variants and implement optimized kernel",
-  label: "flashattn-research"
+  label: "tri-research"
 })
 
-// Example: Build LLM serving infrastructure
+// Example: Build LLM serving infrastructure (Lianmin)
 sessions_spawn({
   agentId: "main",
   task: "Design serving architecture for multi-model deployment",
-  label: "serving-design"
+  label: "lianmin-serving"
 })
 ```
 

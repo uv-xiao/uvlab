@@ -22,10 +22,10 @@ Each agent combines:
 
 | Agent | Inspiration | Focus Areas |
 |-------|-------------|-------------|
-| **SGLang** | merrymercy | LLM serving, compilers, distributed systems |
-| **XGBoost** | tqchen | ML systems, optimization, scalable training |
-| **FlashInfer** | yzh119 | Kernel optimization, LLM deployment, graph ML |
-| **FlashAttn** | tridao | Efficient attention, ML theory, high-performance computing |
+| **Lianmin** | merrymercy (Lianmin Zheng) | LLM serving, compilers, distributed systems |
+| **Tianqi** | tqchen (Tianqi Chen) | ML systems, optimization, scalable training |
+| **Zihao** | yzh119 (Zihao Ye) | Kernel optimization, LLM deployment, graph ML |
+| **Tri** | tridao (Tri Dao) | Efficient attention, ML theory, high-performance computing |
 
 ## Skills Framework (pkbllm)
 

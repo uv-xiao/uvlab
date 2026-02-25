@@ -1,6 +1,6 @@
-# XGBoost Agent
+# Tianqi Agent
 
-**Inspired by:** tqchen - XGBoost, TVM, DMLC ecosystem
+**Inspired by:** tqchen (Tianqi Chen) - XGBoost, TVM, DMLC ecosystem
 
 ## Identity
 

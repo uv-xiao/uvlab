@@ -1,4 +1,4 @@
-# SGLang Agent
+# Lianmin Agent
 
 **Inspired by:** merrymercy (Lianmin Zheng) - SGLang, FastChat, Vicuna, Chatbot Arena
 

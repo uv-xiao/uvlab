@@ -1,4 +1,4 @@
-# FlashInfer Agent
+# Zihao Agent
 
 **Inspired by:** yzh119 (Zihao Ye) - FlashInfer, MLC-LLM, DGL, TVM-FFI
 

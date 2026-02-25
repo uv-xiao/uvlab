@@ -68,10 +68,10 @@ Each agent is a versatile research expert, not narrowly specialized.
 | Agent | Inspired By | Expertise |
 |-------|-------------|-----------|
 | main / Jarvis | Lab Director | Coordination, oversight |
-| sglang | merrymercy (Lianmin Zheng) | LLM serving, compilers, distributed systems |
-| xgboost | tqchen (Tianqi Chen) | ML systems, optimization, scalable training |
-| flashinfer | yzh119 (Zihao Ye) | Kernel optimization, LLM deployment, graph ML |
-| flashattn | tridao (Tri Dao) | Efficient attention, ML theory, HPC |
+| lianmin | merrymercy (Lianmin Zheng) | LLM serving, compilers, distributed systems |
+| tianqi | tqchen (Tianqi Chen) | ML systems, optimization, scalable training |
+| zihao | yzh119 (Zihao Ye) | Kernel optimization, LLM deployment, graph ML |
+| tri | tridao (Tri Dao) | Efficient attention, ML theory, HPC |
 
 ### pkbllm Skills Framework
 

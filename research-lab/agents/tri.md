@@ -1,4 +1,4 @@
-# FlashAttn Agent
+# Tri Agent
 
 **Inspired by:** tridao (Tri Dao) - Flash Attention, Princeton CS, ML & Systems
 
