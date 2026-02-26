@@ -355,34 +355,31 @@ openclaw agents list
 openclaw agents list --bindings
 ```
 
-### 2. Start OpenClaw
+### 2. Start/Stop/Restart OpenClaw Gateway
+
+OpenClaw runs as a **Gateway service** that manages connections to chat platforms and AI models.
 
 ```bash
-# Start with Feishu integration
-openclaw start
+# Start the Gateway service
+openclaw gateway start
 
-# Or start in background (daemon mode)
-openclaw start --daemon
+# Check Gateway status
+openclaw gateway status
+
+# Stop the Gateway
+openclaw gateway stop
+
+# Restart Gateway (use after config changes)
+openclaw gateway restart
+
+# View live logs
+openclaw logs --follow
 ```
 
-### Stopping and Restarting
-
-**Note:** OpenClaw does not have a `restart` command. To restart:
-
+**After configuration changes:** Always restart the Gateway:
 ```bash
-# Check if OpenClaw is running
-ps aux | grep openclaw
-
-# Stop OpenClaw
-pkill -f openclaw
-# Or: kill <PID>
-
-# Start again
-openclaw start
-# Or: openclaw start --daemon
+openclaw gateway restart
 ```
-
-**After configuration changes:** Always stop and start OpenClaw for changes to take effect.
 
 ### 3. Test Agent Connectivity
 
