@@ -26,4 +26,5 @@ agents/main/
 
 # Legacy workspace (migrated to agents/jarvis/workspace/)
 workspace/
+workspace.bak.*/
 
