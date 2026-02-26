@@ -1,0 +1,22 @@
+{
+  "id": "3e9c77ee-8fb0-42ae-8ee0-68077390f4bf",
+  "enqueuedAt": 1772116836825,
+  "channel": "feishu",
+  "to": "ou_6c412e7bd985f6fa4150e47b409e3b50",
+  "payloads": [
+    {
+      "text": "Hello, World! 🛠️\n\nTianqi here, online and ready. What are we building today?",
+      "replyToTag": false,
+      "replyToCurrent": false,
+      "audioAsVoice": false
+    }
+  ],
+  "gifPlayback": false,
+  "mirror": {
+    "sessionKey": "agent:tianqi:feishu:direct:ou_6c412e7bd985f6fa4150e47b409e3b50",
+    "agentId": "tianqi",
+    "text": "Hello, World! 🛠️\n\nTianqi here, online and ready. What are we building today?"
+  },
+  "retryCount": 1,
+  "lastError": "Feishu account \"default\" not configured"
+}

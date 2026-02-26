@@ -38,3 +38,25 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 ---
 
 Add whatever helps you do your job. This is your cheat sheet.
+
+## Feishu Messaging
+
+**Critical lesson (2026-02-26):**
+
+| Tool | Use Case | Example |
+|------|----------|---------|
+| `sessions_send` | Send messages **between agent sessions** (inter-agent coordination) | `sessions_send(sessionKey="agent:lianmin:...", message="...")` |
+| `message` | Send messages **to users via Feishu** | `message(action="send", channel="feishu", accountId="tianqi", target="ou_xxx", message="...")` |
+
+**Common mistake:** Don't use `sessions_send` to message users — it times out because sessions represent incoming message contexts, not outbound channels.
+
+**Correct pattern for Feishu DM:**
+```
+message(
+  action: "send",
+  channel: "feishu",
+  accountId: "tianqi",  // YOUR account
+  target: "ou_6c412e7bd985f6fa4150e47b409e3b50",  // user ID
+  message: "..."
+)
+```
