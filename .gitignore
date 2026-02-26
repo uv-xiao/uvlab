@@ -20,3 +20,8 @@ workspace.bak.*/
 # Workspace internal files that shouldn't be tracked
 workspace/.obsidian/
 workspace/.git/
+
+# Agent runtime files (sessions, auth, models)
+**/sessions/
+**/agent/auth.json
+**/agent/models.json
