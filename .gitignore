@@ -24,3 +24,6 @@ workspace.bak.*/
 **/agent/auth.json
 **/agent/models.json
 
+# Legacy workspace (migrated to agents/jarvis/workspace/)
+workspace/
+

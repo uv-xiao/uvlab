@@ -8,35 +8,42 @@ UV Lab is a multi-agent research environment built on [OpenClaw](https://opencla
 
 ## 🏗️ Architecture
 
+UV Lab uses **Direct Channel Routing** - each agent has its own Feishu bot, and Sir messages the appropriate agent directly for maximum context preservation.
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         Sir (uv)                             │
-│              Direct message to specific agent                │
-│                     OR message Jarvis                        │
-└─────────────────────────────────────────────────────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              │               │               │
-              ▼               ▼               ▼
-    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-    │   Jarvis    │  │   Lianmin   │  │   Tianqi    │
-    │  (Director) │  │  (Serving)  │  │  (ML Sys)   │
-    └─────────────┘  └─────────────┘  └─────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              │               │               │
-              ▼               ▼               ▼
-                    ┌─────────────┐  ┌─────────────┐
-                    │   Zihao     │  │    Tri      │
-                    │  (Kernels)  │  │  (Attention)│
-                    └─────────────┘  └─────────────┘
+                              Sir (uv)
+                                │
+            ┌───────────────────┼───────────────────┐
+            │                   │                   │
+            ▼                   ▼                   ▼
+      ┌───────────┐       ┌───────────┐       ┌───────────┐
+      │  Jarvis   │       │  Lianmin  │       │  Tianqi   │
+      │(Director) │       │ (Serving) │       │ (ML Sys)  │
+      └───────────┘       └───────────┘       └───────────┘
+                                │                   │
+                      ┌─────────┴─────────┐         │
+                      │                   │         │
+                      ▼                   ▼         ▼
+                ┌───────────┐       ┌───────────┐
+                │   Zihao   │       │    Tri    │
+                │ (Kernels) │       │(Attention)│
+                └───────────┘       └───────────┘
 ```
+
+### Why Direct Routing?
+
+According to [OpenClaw best practices](https://docs.openclaw.ai/tools/subagents), **sub-agents don't inherit full context** (SOUL.md, IDENTITY.md, MEMORY.md are not accessible). By using direct channel routing:
+
+- ✅ Each agent has **full access** to their workspace context
+- ✅ No context loss when dispatching tasks
+- ✅ Simpler mental model - one bot per expert
+- ✅ Agents can still collaborate via `sessions_send` when needed
 
 ### Agent Roster
 
 | Agent | ID | Expertise | Best For |
 |-------|-----|-----------|----------|
-| **Jarvis** | `jarvis` | Lab coordination, task dispatch | Task analysis, agent orchestration |
+| **Jarvis** | `jarvis` | Lab coordination, cross-domain synthesis | General questions, task decomposition, multi-agent coordination |
 | **Lianmin** | `lianmin` | LLM serving, compilers, distributed | Inference engines, API design, SGLang |
 | **Tianqi** | `tianqi` | ML systems, optimization | Training frameworks, TVM, XGBoost |
 | **Zihao** | `zihao` | Kernel optimization, deployment | CUDA kernels, FlashInfer, quantization |
@@ -51,10 +58,11 @@ UV Lab is a multi-agent research environment built on [OpenClaw](https://opencla
 └── .openclaw/
     ├── .git/                     # This repository
     ├── .gitignore                # Excludes system/runtime files
+    ├── openclaw.json             # Configuration
     └── agents/                   # All agents
-        ├── jarvis/               # Jarvis (main/director agent)
-        │   └── workspace/        # Lab workspace
-        │       ├── AGENTS.md     # Agent configuration
+        ├── jarvis/               # Jarvis (Director)
+        │   └── workspace/
+        │       ├── AGENTS.md     # Agent identity
         │       ├── SOUL.md       # Lab identity
         │       ├── docs/         # Lab documentation
         │       ├── memory/       # Lab memory
@@ -72,7 +80,7 @@ UV Lab is a multi-agent research environment built on [OpenClaw](https://opencla
 ### Prerequisites
 
 - OpenClaw installed and configured
-- Feishu bots configured for each agent (optional)
+- Feishu bots configured for each agent
 
 ### Clone and Setup
 
@@ -86,7 +94,7 @@ git remote add origin https://github.com/uv-xiao/uvlab.git
 git pull origin main
 ```
 
-### Configure Multi-Agent Workflow
+### Configure Channel Bindings
 
 Add to your `openclaw.json`:
 
@@ -99,7 +107,7 @@ Add to your `openclaw.json`:
     },
     "list": [
       {
-        "id": "main",
+        "id": "jarvis",
         "default": true,
         "workspace": "/home/uvxiao/.openclaw/agents/jarvis/workspace"
       },
@@ -121,6 +129,59 @@ Add to your `openclaw.json`:
       }
     ]
   },
+  "bindings": [
+    { "agentId": "jarvis", "match": { "channel": "feishu", "peer": "jarvis-bot" } },
+    { "agentId": "lianmin", "match": { "channel": "feishu", "peer": "lianmin-bot" } },
+    { "agentId": "tianqi", "match": { "channel": "feishu", "peer": "tianqi-bot" } },
+    { "agentId": "zihao", "match": { "channel": "feishu", "peer": "zihao-bot" } },
+    { "agentId": "tri", "match": { "channel": "feishu", "peer": "tri-bot" } }
+  ]
+}
+```
+
+---
+
+## 🤝 Multi-Agent Collaboration
+
+### Workflow
+
+1. **Direct Contact** - Sir messages the appropriate agent directly
+2. **Full Context** - Agent works with complete workspace context (SOUL.md, MEMORY.md, etc.)
+3. **Self-Directed** - Agent can spawn sub-agents for parallel work if needed
+4. **Cross-Agent** - Agents can use `sessions_send` to collaborate when configured
+
+### Example: Task Routing
+
+| Task | Contact |
+|------|---------|
+| "Design LLM serving system" | → **Lianmin** (serving expert) |
+| "Optimize CUDA kernels" | → **Zihao** (kernel expert) |
+| "Research attention mechanisms" | → **Tri** (attention expert) |
+| "General question / unsure" | → **Jarvis** (coordinator) |
+| "Multiple domains needed" | → **Jarvis** (synthesizes across agents) |
+
+### When to Contact Jarvis
+
+- General questions that don't fit a specific domain
+- Tasks spanning multiple expertise areas
+- Uncertain which specialist to contact
+- Cross-cutting concerns (architecture, strategy)
+
+### Agent-to-Agent Communication
+
+When enabled, agents can communicate directly:
+
+```javascript
+// Lianmin needs kernel optimization help
+sessions_send({
+  agentId: "zihao",
+  message: "Need optimized attention kernel for multi-GPU serving"
+})
+```
+
+**Required configuration:**
+```json
+{
   "tools": {
     "agentToAgent": {
       "enabled": true,
@@ -135,57 +196,21 @@ Add to your `openclaw.json`:
 
 ---
 
-## 🤝 Multi-Agent Collaboration
-
-### Workflow
-
-1. **Task Reception** - Sir sends task to Jarvis or specific agent
-2. **Task Analysis** - Jarvis analyzes and routes to appropriate RA(s)
-3. **Agent Dispatch** - Spawn agents with `sessions_spawn`
-4. **Collaboration** - Agents work independently or coordinate via Jarvis
-5. **Result Synthesis** - Jarvis collects and synthesizes outputs
-6. **Delivery** - Final result presented to Sir
-
-### Example: Multi-Agent Task
-
-**Sir:** "Build an optimized LLM serving system"
-
-**Jarvis workflow:**
-```javascript
-// 1. Analyze and spawn Lianmin for architecture
-sessions_spawn({
-  agentId: "lianmin",
-  task: "Design serving system architecture for multi-model deployment",
-  label: "lianmin-arch"
-})
-
-// 2. Spawn Zihao for kernel optimization
-sessions_spawn({
-  agentId: "zihao",
-  task: "Optimize CUDA kernels for attention and feed-forward layers",
-  label: "zihao-kernels"
-})
-
-// 3. Synthesize results and deliver
-```
-
----
-
 ## 🛠️ Best Practices
 
-### For Lab Director (Jarvis)
+### For Sir (Human)
 
-- **Always analyze first** - Use keyword matching to route correctly
-- **Spawn with full context** - Include agent persona in task prompt
-- **Monitor actively** - Check session status periodically
-- **Synthesize thoroughly** - Don't just forward raw outputs
+- **Contact the right expert** - Use keyword matching to route to appropriate agent
+- **Jarvis as fallback** - When unsure, start with Jarvis
+- **Be specific** - Clear task descriptions get better results
+- **Respect boundaries** - Don't ask kernel questions to Tianqi
 
-### For Research Assistants
+### For Agents
 
 - **Embody your persona** - Think like your inspiration
 - **Use appropriate skills** - Invoke pkbllm skills when needed
 - **Be production-minded** - Code that ships, docs that help
-- **Flag collaboration needs** - Tell Jarvis if another agent would help
+- **Escalate when needed** - Use `sessions_send` to collaborate
 
 ### Security
 
@@ -199,8 +224,8 @@ sessions_spawn({
 ## 📚 Documentation
 
 - [Multi-Agent Workflow](agents/jarvis/workspace/docs/MULTI-AGENT-WORKFLOW.md) - Detailed collaboration patterns
-- [Setup Guide](workspace/docs/SETUP.md) - Environment setup instructions
-- [ThunderAgent Analysis](workspace/docs/thunderagent-analysis.md) - Technical analysis
+- [Setup Guide](agents/jarvis/workspace/docs/SETUP.md) - Environment setup instructions
+- [ThunderAgent Analysis](agents/jarvis/workspace/docs/thunderagent-analysis.md) - Technical analysis
 
 ---
 
