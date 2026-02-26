@@ -326,20 +326,6 @@
     },
     "sessions": {
       "visibility": "all"
-    },
-    "skills": {
-      "enabled": true,
-      "sources": {
-        "hub": {
-          "enabled": true
-        },
-        "project": {
-          "enabled": true
-        },
-        "user": {
-          "enabled": true
-        }
-      }
     }
   }
 }
