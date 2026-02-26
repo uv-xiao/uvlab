@@ -7,9 +7,12 @@
 # - openclaw.json.local (not tracked, contains sensitive data)
 # - openclaw.json (generated file, used by OpenClaw)
 #
+# Sensitive fields are defined in sensitive-fields.conf
+#
 # Usage:
 #   ./scripts/sync-config.sh merge    # Generate openclaw.json from template + local
-#   ./scripts/sync-config.sh extract  # Update template from current openclaw.json
+#   ./scripts/sync-config.sh extract  # Extract sensitive values to local config
+#   ./scripts/sync-config.sh reverse  # Update template and local from openclaw.json
 #   ./scripts/sync-config.sh verify   # Check if openclaw.json matches template + local
 #
 
@@ -23,6 +26,7 @@ cd "$PROJECT_DIR"
 TEMPLATE_FILE="openclaw.json.template"
 LOCAL_FILE="openclaw.json.local"
 CONFIG_FILE="openclaw.json"
+SENSITIVE_FIELDS_FILE="$SCRIPT_DIR/sensitive-fields.conf"
 
 # Colors for output
 RED='\033[0;31m'
@@ -42,6 +46,34 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Load sensitive fields configuration
+load_sensitive_fields() {
+    if [[ ! -f "$SENSITIVE_FIELDS_FILE" ]]; then
+        log_error "Sensitive fields config not found: $SENSITIVE_FIELDS_FILE"
+        exit 1
+    fi
+    
+    # Read fields into associative array
+    declare -gA SENSITIVE_FIELDS
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+        
+        # Trim whitespace
+        key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        
+        [[ -n "$key" && -n "$value" ]] && SENSITIVE_FIELDS["$key"]="$value"
+    done < "$SENSITIVE_FIELDS_FILE"
+    
+    if [[ ${#SENSITIVE_FIELDS[@]} -eq 0 ]]; then
+        log_error "No sensitive fields loaded from $SENSITIVE_FIELDS_FILE"
+        exit 1
+    fi
+    
+    log_info "Loaded ${#SENSITIVE_FIELDS[@]} sensitive field definitions"
+}
+
 check_files() {
     if [[ ! -f "$TEMPLATE_FILE" ]]; then
         log_error "Template file not found: $TEMPLATE_FILE"
@@ -57,80 +89,100 @@ check_files() {
 
 # Load local config into variables
 load_local_config() {
-    declare -g BAILIAN_API_KEY
-    declare -g GENERIC_API_KEY
-    declare -g HOME_DIR
-    declare -g TIMESTAMP
-    declare -g JARVIS_APP_ID
-    declare -g JARVIS_APP_SECRET
-    declare -g LIANMIN_APP_ID
-    declare -g LIANMIN_APP_SECRET
-    declare -g TIANQI_APP_ID
-    declare -g TIANQI_APP_SECRET
-    declare -g ZIHAO_APP_ID
-    declare -g ZIHAO_APP_SECRET
-    declare -g TRI_APP_ID
-    declare -g TRI_APP_SECRET
-    declare -g GATEWAY_AUTH_TOKEN
-    
-    # Source the local file (it should be in KEY=value format)
+    declare -gA LOCAL_VALUES
     while IFS='=' read -r key value; do
-        # Skip comments and empty lines
         [[ -z "$key" || "$key" =~ ^# ]] && continue
-        
-        # Remove leading/trailing whitespace
-        key=$(echo "$key" | tr -d '[:space:]')
+        key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        
-        case "$key" in
-            BAILIAN_API_KEY) BAILIAN_API_KEY="$value" ;;
-            GENERIC_API_KEY) GENERIC_API_KEY="$value" ;;
-            HOME) HOME_DIR="$value" ;;
-            TIMESTAMP) TIMESTAMP="$value" ;;
-            JARVIS_APP_ID) JARVIS_APP_ID="$value" ;;
-            JARVIS_APP_SECRET) JARVIS_APP_SECRET="$value" ;;
-            LIANMIN_APP_ID) LIANMIN_APP_ID="$value" ;;
-            LIANMIN_APP_SECRET) LIANMIN_APP_SECRET="$value" ;;
-            TIANQI_APP_ID) TIANQI_APP_ID="$value" ;;
-            TIANQI_APP_SECRET) TIANQI_APP_SECRET="$value" ;;
-            ZIHAO_APP_ID) ZIHAO_APP_ID="$value" ;;
-            ZIHAO_APP_SECRET) ZIHAO_APP_SECRET="$value" ;;
-            TRI_APP_ID) TRI_APP_ID="$value" ;;
-            TRI_APP_SECRET) TRI_APP_SECRET="$value" ;;
-            GATEWAY_AUTH_TOKEN) GATEWAY_AUTH_TOKEN="$value" ;;
-        esac
+        [[ -n "$key" ]] && LOCAL_VALUES["$key"]="$value"
     done < "$LOCAL_FILE"
+}
+
+# Convert JSON path to jq path
+# Input: models.providers.bailian.apiKey
+# Output: .models.providers.bailian.apiKey
+json_path_to_jq() {
+    local path="$1"
+    # Remove leading dot if present, then add one
+    path="${path#.}"
+    # Ensure path starts with .
+    echo ".${path}"
+}
+
+# Build jq filter for replacing sensitive values with placeholders
+build_jq_filter() {
+    local filter=""
+    local first=true
     
-    # Set defaults if not provided
-    TIMESTAMP="${TIMESTAMP:-$(date -u +%Y-%m-%dT%H:%M:%S.000Z)}"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        local jq_path=$(json_path_to_jq "$field_path")
+        
+        if [[ "$first" == "true" ]]; then
+            first=false
+        else
+            filter+=" | "
+        fi
+        
+        # jq_path already starts with . from json_path_to_jq
+        filter+="${jq_path} = \"{{${placeholder}}}\""
+    done
+    
+    echo "$filter"
+}
+
+# Build jq filter for extracting sensitive values
+build_extract_filter() {
+    local filter=""
+    
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        local jq_path=$(json_path_to_jq "$field_path")
+        
+        if [[ -z "$filter" ]]; then
+            filter="{"
+        else
+            filter+=", "
+        fi
+        
+        filter+="\"${placeholder}\": ${jq_path}"
+    done
+    
+    filter+="}"
+    echo "$filter"
 }
 
 merge_config() {
     log_info "Generating $CONFIG_FILE from $TEMPLATE_FILE + $LOCAL_FILE"
     
     check_files
+    load_sensitive_fields
     load_local_config
     
-    # Read template and replace placeholders
+    if ! command -v jq &> /dev/null; then
+        log_error "jq is required for merge operation"
+        log_info "Please install jq: https://stedolan.github.io/jq/"
+        exit 1
+    fi
+    
+    # Read template
     local content
     content=$(cat "$TEMPLATE_FILE")
     
-    # Replace placeholders
-    content="${content//\{\{BAILIAN_API_KEY\}\}/$BAILIAN_API_KEY}"
-    content="${content//\{\{GENERIC_API_KEY\}\}/$GENERIC_API_KEY}"
-    content="${content//\{\{HOME\}\}/$HOME_DIR}"
-    content="${content//\{\{TIMESTAMP\}\}/$TIMESTAMP}"
-    content="${content//\{\{JARVIS_APP_ID\}\}/$JARVIS_APP_ID}"
-    content="${content//\{\{JARVIS_APP_SECRET\}\}/$JARVIS_APP_SECRET}"
-    content="${content//\{\{LIANMIN_APP_ID\}\}/$LIANMIN_APP_ID}"
-    content="${content//\{\{LIANMIN_APP_SECRET\}\}/$LIANMIN_APP_SECRET}"
-    content="${content//\{\{TIANQI_APP_ID\}\}/$TIANQI_APP_ID}"
-    content="${content//\{\{TIANQI_APP_SECRET\}\}/$TIANQI_APP_SECRET}"
-    content="${content//\{\{ZIHAO_APP_ID\}\}/$ZIHAO_APP_ID}"
-    content="${content//\{\{ZIHAO_APP_SECRET\}\}/$ZIHAO_APP_SECRET}"
-    content="${content//\{\{TRI_APP_ID\}\}/$TRI_APP_ID}"
-    content="${content//\{\{TRI_APP_SECRET\}\}/$TRI_APP_SECRET}"
-    content="${content//\{\{GATEWAY_AUTH_TOKEN\}\}/$GATEWAY_AUTH_TOKEN}"
+    # Replace placeholders with actual values
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        local value="${LOCAL_VALUES[$placeholder]:-}"
+        content="${content//\{\{$placeholder\}\}/$value}"
+    done
+    
+    # Also replace special placeholders
+    if [[ -n "${LOCAL_VALUES[HOME]}" ]]; then
+        content="${content//\{\{HOME\}\}/${LOCAL_VALUES[HOME]}}"
+    fi
+    if [[ -n "${LOCAL_VALUES[TIMESTAMP]}" ]]; then
+        content="${content//\{\{TIMESTAMP\}\}/${LOCAL_VALUES[TIMESTAMP]}}"
+    fi
     
     # Write to config file
     echo "$content" > "$CONFIG_FILE"
@@ -141,84 +193,78 @@ merge_config() {
 }
 
 extract_config() {
-    log_info "Extracting sensitive values from $CONFIG_FILE to update template"
+    log_info "Extracting sensitive values from $CONFIG_FILE to $LOCAL_FILE"
     
     if [[ ! -f "$CONFIG_FILE" ]]; then
         log_error "Config file not found: $CONFIG_FILE"
         exit 1
     fi
     
-    # Create backup of template
-    cp "$TEMPLATE_FILE" "$TEMPLATE_FILE.bak"
+    load_sensitive_fields
     
-    # Extract values and create new local file
-    local tmp_local="$LOCAL_FILE.tmp"
-    
-    cat > "$tmp_local" << 'EOF'
-# OpenClaw Local Configuration
-# Copy this file to openclaw.json.local and fill in your sensitive values
-# DO NOT commit openclaw.json.local to git!
-
-# Model API Keys
-EOF
-    
-    # Extract API keys using jq if available, otherwise grep
-    if command -v jq &> /dev/null; then
-        local bailian_key generic_key home_dir timestamp
-        local jarvis_id jarvis_secret lianmin_id lianmin_secret
-        local tianqi_id tianqi_secret zihao_id zihao_secret
-        local tri_id tri_secret gateway_token
-        
-        bailian_key=$(jq -r '.models.providers.bailian.apiKey // ""' "$CONFIG_FILE")
-        generic_key=$(jq -r '.models.providers.generic.apiKey // ""' "$CONFIG_FILE")
-        home_dir=$(jq -r '.agents.defaults.workspace' "$CONFIG_FILE" | sed 's|/.openclaw/agents/jarvis/workspace||')
-        timestamp=$(jq -r '.meta.lastTouchedAt // ""' "$CONFIG_FILE")
-        
-        jarvis_id=$(jq -r '.channels.feishu.accounts.jarvis.appId // ""' "$CONFIG_FILE")
-        jarvis_secret=$(jq -r '.channels.feishu.accounts.jarvis.appSecret // ""' "$CONFIG_FILE")
-        lianmin_id=$(jq -r '.channels.feishu.accounts.lianmin.appId // ""' "$CONFIG_FILE")
-        lianmin_secret=$(jq -r '.channels.feishu.accounts.lianmin.appSecret // ""' "$CONFIG_FILE")
-        tianqi_id=$(jq -r '.channels.feishu.accounts.tianqi.appId // ""' "$CONFIG_FILE")
-        tianqi_secret=$(jq -r '.channels.feishu.accounts.tianqi.appSecret // ""' "$CONFIG_FILE")
-        zihao_id=$(jq -r '.channels.feishu.accounts.zihao.appId // ""' "$CONFIG_FILE")
-        zihao_secret=$(jq -r '.channels.feishu.accounts.zihao.appSecret // ""' "$CONFIG_FILE")
-        tri_id=$(jq -r '.channels.feishu.accounts.tri.appId // ""' "$CONFIG_FILE")
-        tri_secret=$(jq -r '.channels.feishu.accounts.tri.appSecret // ""' "$CONFIG_FILE")
-        
-        gateway_token=$(jq -r '.gateway.auth.token // ""' "$CONFIG_FILE")
-        
-        cat >> "$tmp_local" << EOF
-BAILIAN_API_KEY=${bailian_key}
-GENERIC_API_KEY=${generic_key}
-
-# System
-HOME=${home_dir}
-TIMESTAMP=${timestamp}
-
-# Feishu App Credentials
-JARVIS_APP_ID=${jarvis_id}
-JARVIS_APP_SECRET=${jarvis_secret}
-
-LIANMIN_APP_ID=${lianmin_id}
-LIANMIN_APP_SECRET=${lianmin_secret}
-
-TIANQI_APP_ID=${tianqi_id}
-TIANQI_APP_SECRET=${tianqi_secret}
-
-ZIHAO_APP_ID=${zihao_id}
-ZIHAO_APP_SECRET=${zihao_secret}
-
-TRI_APP_ID=${tri_id}
-TRI_APP_SECRET=${tri_secret}
-
-# Gateway Auth Token
-GATEWAY_AUTH_TOKEN=${gateway_token}
-EOF
-    else
-        log_warn "jq not found, using fallback method"
-        log_error "Please install jq for better extraction: https://stedolan.github.io/jq/"
+    if ! command -v jq &> /dev/null; then
+        log_error "jq is required for extract operation"
+        log_info "Please install jq: https://stedolan.github.io/jq/"
         exit 1
     fi
+    
+    # Extract values using jq
+    local tmp_local="$LOCAL_FILE.tmp.$$"
+    
+    # Build header
+    cat > "$tmp_local" << 'EOF'
+# OpenClaw Local Configuration
+# DO NOT commit this file to git!
+
+EOF
+    
+    # Group fields by category for better organization
+    echo "# Model API Keys" >> "$tmp_local"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        if [[ "$placeholder" == *API_KEY* ]]; then
+            local jq_path=$(json_path_to_jq "$field_path")
+            local value=$(jq -r "${jq_path} // \"\"" "$CONFIG_FILE")
+            echo "${placeholder}=${value}" >> "$tmp_local"
+        fi
+    done
+    
+    echo "" >> "$tmp_local"
+    echo "# System" >> "$tmp_local"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        if [[ "$placeholder" == "HOME" || "$placeholder" == "TIMESTAMP" ]]; then
+            local jq_path=$(json_path_to_jq "$field_path")
+            local value=$(jq -r "${jq_path} // \"\"" "$CONFIG_FILE")
+            # For HOME, extract just the home directory part
+            if [[ "$placeholder" == "HOME" ]]; then
+                value=$(echo "$value" | sed 's|/.openclaw/agents/.*||')
+            fi
+            echo "${placeholder}=${value}" >> "$tmp_local"
+        fi
+    done
+    
+    echo "" >> "$tmp_local"
+    echo "# Feishu App Credentials" >> "$tmp_local"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        if [[ "$placeholder" == *_APP_ID* || "$placeholder" == *_APP_SECRET* ]]; then
+            local jq_path=$(json_path_to_jq "$field_path")
+            local value=$(jq -r "${jq_path} // \"\"" "$CONFIG_FILE")
+            echo "${placeholder}=${value}" >> "$tmp_local"
+        fi
+    done
+    
+    echo "" >> "$tmp_local"
+    echo "# Gateway Auth Token" >> "$tmp_local"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        if [[ "$placeholder" == *TOKEN* ]]; then
+            local jq_path=$(json_path_to_jq "$field_path")
+            local value=$(jq -r "${jq_path} // \"\"" "$CONFIG_FILE")
+            echo "${placeholder}=${value}" >> "$tmp_local"
+        fi
+    done
     
     # Replace local file
     mv "$tmp_local" "$LOCAL_FILE"
@@ -235,121 +281,86 @@ reverse_config() {
         exit 1
     fi
     
+    load_sensitive_fields
+    
     if ! command -v jq &> /dev/null; then
         log_error "jq is required for reverse operation"
         log_info "Please install jq: https://stedolan.github.io/jq/"
         exit 1
     fi
     
-    # Create backup
+    # Create backups
     cp "$TEMPLATE_FILE" "$TEMPLATE_FILE.bak.$(date +%Y%m%d%H%M%S)"
-    cp "$LOCAL_FILE" "$LOCAL_FILE.bak.$(date +%Y%m%d%H%M%S)"
     
-    # Step 1: Extract all sensitive values to local file
+    # Step 1: Extract sensitive values to local file
     log_info "Extracting sensitive values..."
     
-    local bailian_key generic_key home_dir timestamp
-    local jarvis_id jarvis_secret lianmin_id lianmin_secret
-    local tianqi_id tianqi_secret zihao_id zihao_secret
-    local tri_id tri_secret gateway_token
-    
-    bailian_key=$(jq -r '.models.providers.bailian.apiKey // ""' "$CONFIG_FILE")
-    generic_key=$(jq -r '.models.providers.generic.apiKey // ""' "$CONFIG_FILE")
-    home_dir=$(jq -r '.agents.defaults.workspace' "$CONFIG_FILE" | sed 's|/.openclaw/agents/jarvis/workspace||')
-    timestamp=$(jq -r '.meta.lastTouchedAt // ""' "$CONFIG_FILE")
-    
-    jarvis_id=$(jq -r '.channels.feishu.accounts.jarvis.appId // ""' "$CONFIG_FILE")
-    jarvis_secret=$(jq -r '.channels.feishu.accounts.jarvis.appSecret // ""' "$CONFIG_FILE")
-    lianmin_id=$(jq -r '.channels.feishu.accounts.lianmin.appId // ""' "$CONFIG_FILE")
-    lianmin_secret=$(jq -r '.channels.feishu.accounts.lianmin.appSecret // ""' "$CONFIG_FILE")
-    tianqi_id=$(jq -r '.channels.feishu.accounts.tianqi.appId // ""' "$CONFIG_FILE")
-    tianqi_secret=$(jq -r '.channels.feishu.accounts.tianqi.appSecret // ""' "$CONFIG_FILE")
-    zihao_id=$(jq -r '.channels.feishu.accounts.zihao.appId // ""' "$CONFIG_FILE")
-    zihao_secret=$(jq -r '.channels.feishu.accounts.zihao.appSecret // ""' "$CONFIG_FILE")
-    tri_id=$(jq -r '.channels.feishu.accounts.tri.appId // ""' "$CONFIG_FILE")
-    tri_secret=$(jq -r '.channels.feishu.accounts.tri.appSecret // ""' "$CONFIG_FILE")
-    gateway_token=$(jq -r '.gateway.auth.token // ""' "$CONFIG_FILE")
-    
-    # Update local file
-    cat > "$LOCAL_FILE" << EOF
+    local tmp_local="$LOCAL_FILE.tmp.$$"
+    cat > "$tmp_local" << 'EOF'
 # OpenClaw Local Configuration
 # DO NOT commit this file to git!
 
-# Model API Keys
-BAILIAN_API_KEY=${bailian_key}
-GENERIC_API_KEY=${generic_key}
-
-# System
-HOME=${home_dir}
-TIMESTAMP=${timestamp}
-
-# Feishu App Credentials
-JARVIS_APP_ID=${jarvis_id}
-JARVIS_APP_SECRET=${jarvis_secret}
-
-LIANMIN_APP_ID=${lianmin_id}
-LIANMIN_APP_SECRET=${lianmin_secret}
-
-TIANQI_APP_ID=${tianqi_id}
-TIANQI_APP_SECRET=${tianqi_secret}
-
-ZIHAO_APP_ID=${zihao_id}
-ZIHAO_APP_SECRET=${zihao_secret}
-
-TRI_APP_ID=${tri_id}
-TRI_APP_SECRET=${tri_secret}
-
-# Gateway Auth Token
-GATEWAY_AUTH_TOKEN=${gateway_token}
 EOF
     
+    # Group fields by category
+    echo "# Model API Keys" >> "$tmp_local"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        if [[ "$placeholder" == *API_KEY* ]]; then
+            local jq_path=$(json_path_to_jq "$field_path")
+            local value=$(jq -r "${jq_path} // \"\"" "$CONFIG_FILE")
+            echo "${placeholder}=${value}" >> "$tmp_local"
+        fi
+    done
+    
+    echo "" >> "$tmp_local"
+    echo "# System" >> "$tmp_local"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        if [[ "$placeholder" == "HOME" || "$placeholder" == "TIMESTAMP" ]]; then
+            local jq_path=$(json_path_to_jq "$field_path")
+            local value=$(jq -r "${jq_path} // \"\"" "$CONFIG_FILE")
+            if [[ "$placeholder" == "HOME" ]]; then
+                value=$(echo "$value" | sed 's|/.openclaw/agents/.*||')
+            fi
+            echo "${placeholder}=${value}" >> "$tmp_local"
+        fi
+    done
+    
+    echo "" >> "$tmp_local"
+    echo "# Feishu App Credentials" >> "$tmp_local"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        if [[ "$placeholder" == *_APP_ID* || "$placeholder" == *_APP_SECRET* ]]; then
+            local jq_path=$(json_path_to_jq "$field_path")
+            local value=$(jq -r "${jq_path} // \"\"" "$CONFIG_FILE")
+            echo "${placeholder}=${value}" >> "$tmp_local"
+        fi
+    done
+    
+    echo "" >> "$tmp_local"
+    echo "# Gateway Auth Token" >> "$tmp_local"
+    for field_path in "${!SENSITIVE_FIELDS[@]}"; do
+        local placeholder="${SENSITIVE_FIELDS[$field_path]}"
+        if [[ "$placeholder" == *TOKEN* ]]; then
+            local jq_path=$(json_path_to_jq "$field_path")
+            local value=$(jq -r "${jq_path} // \"\"" "$CONFIG_FILE")
+            echo "${placeholder}=${value}" >> "$tmp_local"
+        fi
+    done
+    
+    mv "$tmp_local" "$LOCAL_FILE"
     log_info "Updated $LOCAL_FILE"
     
     # Step 2: Create template by replacing sensitive values with placeholders
     log_info "Creating template with placeholders..."
     
-    jq --arg bailian "${bailian_key}" \
-       --arg generic "${generic_key}" \
-       --arg home "${home_dir}" \
-       --arg ts "${timestamp}" \
-       --arg j_id "${jarvis_id}" \
-       --arg j_sec "${jarvis_secret}" \
-       --arg l_id "${lianmin_id}" \
-       --arg l_sec "${lianmin_secret}" \
-       --arg tq_id "${tianqi_id}" \
-       --arg tq_sec "${tianqi_secret}" \
-       --arg z_id "${zihao_id}" \
-       --arg z_sec "${zihao_secret}" \
-       --arg tr_id "${tri_id}" \
-       --arg tr_sec "${tri_secret}" \
-       --arg token "${gateway_token}" \
-       '
-       .meta.lastTouchedAt = "{{TIMESTAMP}}" |
-       .models.providers.bailian.apiKey = "{{BAILIAN_API_KEY}}" |
-       .models.providers.generic.apiKey = "{{GENERIC_API_KEY}}" |
-       .agents.defaults.workspace = "{{HOME}}/.openclaw/agents/jarvis/workspace" |
-       (.agents.list[] | select(.id == "jarvis").workspace) = "{{HOME}}/.openclaw/agents/jarvis/workspace" |
-       (.agents.list[] | select(.id == "lianmin").workspace) = "{{HOME}}/.openclaw/agents/lianmin/workspace" |
-       (.agents.list[] | select(.id == "tianqi").workspace) = "{{HOME}}/.openclaw/agents/tianqi/workspace" |
-       (.agents.list[] | select(.id == "zihao").workspace) = "{{HOME}}/.openclaw/agents/zihao/workspace" |
-       (.agents.list[] | select(.id == "tri").workspace) = "{{HOME}}/.openclaw/agents/tri/workspace" |
-       .channels.feishu.accounts.jarvis.appId = "{{JARVIS_APP_ID}}" |
-       .channels.feishu.accounts.jarvis.appSecret = "{{JARVIS_APP_SECRET}}" |
-       .channels.feishu.accounts.lianmin.appId = "{{LIANMIN_APP_ID}}" |
-       .channels.feishu.accounts.lianmin.appSecret = "{{LIANMIN_APP_SECRET}}" |
-       .channels.feishu.accounts.tianqi.appId = "{{TIANQI_APP_ID}}" |
-       .channels.feishu.accounts.tianqi.appSecret = "{{TIANQI_APP_SECRET}}" |
-       .channels.feishu.accounts.zihao.appId = "{{ZIHAO_APP_ID}}" |
-       .channels.feishu.accounts.zihao.appSecret = "{{ZIHAO_APP_SECRET}}" |
-       .channels.feishu.accounts.tri.appId = "{{TRI_APP_ID}}" |
-       .channels.feishu.accounts.tri.appSecret = "{{TRI_APP_SECRET}}" |
-       .gateway.auth.token = "{{GATEWAY_AUTH_TOKEN}}"
-       ' "$CONFIG_FILE" > "$TEMPLATE_FILE"
+    local jq_filter=$(build_jq_filter)
+    jq "$jq_filter" "$CONFIG_FILE" > "$TEMPLATE_FILE"
     
     log_info "Updated $TEMPLATE_FILE"
     log_info "Backups created:"
     log_info "  $TEMPLATE_FILE.bak.*"
-    log_info "  $LOCAL_FILE.bak.*"
     log_warn "Please review the changes before committing:"
     log_warn "  git diff openclaw.json.template"
 }
@@ -363,24 +374,19 @@ verify_config() {
         exit 1
     fi
     
-    # Generate temp config and compare
-    local tmp_config="$CONFIG_FILE.tmp.$$"
-    
-    # Run merge to temp file
-    LOCAL_FILE="$LOCAL_FILE" TEMPLATE_FILE="$TEMPLATE_FILE" \
-        bash -c 'source scripts/sync-config.sh merge' > /dev/null 2>&1 || true
-    
-    # Compare (ignoring whitespace and timestamps)
-    if diff -q <(jq -S . "$CONFIG_FILE" 2>/dev/null) <(jq -S . "$CONFIG_FILE" 2>/dev/null) > /dev/null 2>&1; then
-        log_info "Configuration is up to date"
-        rm -f "$tmp_config"
+    if ! command -v jq &> /dev/null; then
+        log_warn "jq not found, skipping detailed verification"
         exit 0
-    else
-        log_warn "Configuration mismatch detected"
+    fi
+    
+    # Simple check: ensure no placeholder remains in openclaw.json
+    if grep -q '{{[A-Z_]*}}' "$CONFIG_FILE"; then
+        log_error "Found unresolved placeholders in $CONFIG_FILE"
         log_info "Run: $0 merge"
-        rm -f "$tmp_config"
         exit 1
     fi
+    
+    log_info "Configuration appears to be valid"
 }
 
 show_usage() {
@@ -413,6 +419,10 @@ Workflows:
      3. Review changes to template
      4. Commit template changes
      5. Restart OpenClaw
+
+Configuration:
+  Sensitive fields are defined in: scripts/sensitive-fields.conf
+  Edit this file to add/remove sensitive fields.
 
 Files:
   openclaw.json.template     - Template with placeholders (tracked in git)

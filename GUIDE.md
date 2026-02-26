@@ -15,7 +15,9 @@ Complete guide for setting up UV Lab multi-agent research environment.
 3. [OpenClaw Configuration](#openclaw-configuration)
 4. [Feishu Bot Configuration](#feishu-bot-configuration)
 5. [Verification](#verification)
-6. [Troubleshooting](#troubleshooting)
+6. [Configuration Management](#configuration-management)
+7. [Security Best Practices](#security-best-practices)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -550,6 +552,100 @@ openclaw agents list --bindings
 2. API key is valid
 3. Model ID is correct
 4. Context window and token limits are appropriate
+
+---
+
+## Configuration Management
+
+UV Lab uses a secure configuration system that separates sensitive data from the tracked repository.
+
+### Overview
+
+| File | Purpose | Tracked? |
+|------|---------|----------|
+| `openclaw.json.template` | Template with placeholders (`{{PLACEHOLDER}}`) | ✅ Yes |
+| `openclaw.json.local` | Your actual secrets and API keys | ❌ No (gitignored) |
+| `openclaw.json` | Generated config used by OpenClaw | ❌ No (gitignored) |
+| `scripts/sensitive-fields.conf` | Defines which fields are sensitive | ✅ Yes |
+
+### Quick Commands
+
+```bash
+# Generate openclaw.json from template + local secrets
+./scripts/sync-config.sh merge
+
+# Extract sensitive values from openclaw.json (after Dashboard edits)
+./scripts/sync-config.sh extract
+
+# Reverse sync: update template and local from openclaw.json
+./scripts/sync-config.sh reverse
+
+# Verify configuration consistency
+./scripts/sync-config.sh verify
+```
+
+### Workflow A: Edit Local Secrets
+
+When you need to update API keys or credentials:
+
+```bash
+# 1. Edit the local secrets file
+vim openclaw.json.local
+
+# 2. Regenerate the config
+./scripts/sync-config.sh merge
+
+# 3. Restart OpenClaw
+openclaw gateway restart
+```
+
+### Workflow B: Edit via Dashboard
+
+When you make changes via OpenClaw Dashboard:
+
+```bash
+# 1. Edit via Dashboard, save to openclaw.json
+
+# 2. Stage the config (pre-commit hook will auto-sync)
+git add -f openclaw.json
+git commit -m "Update config"
+
+# 3. Pre-commit hook automatically:
+#    - Extracts sensitive values to openclaw.json.local
+#    - Updates openclaw.json.template with placeholders
+#    - Re-stages the updated template
+```
+
+### Pre-commit Hook Auto-Sync
+
+The pre-commit hook automatically handles configuration sync:
+
+| Scenario | Action |
+|----------|--------|
+| Only `openclaw.json.template` staged | Validates template can merge with local config |
+| Only `openclaw.json` staged | Reverse syncs to template and local files |
+| Both staged | **BLOCKS** commit (ambiguous - choose one workflow) |
+| Neither staged | Nothing to do |
+
+**Bypass the hook** (not recommended):
+```bash
+git commit --no-verify
+```
+
+### Customizing Sensitive Fields
+
+To add new sensitive fields, edit `scripts/sensitive-fields.conf`:
+
+```
+# Format: JSON_PATH=PLACEHOLDER_NAME
+channels.feishu.newbot.appId=NEWBOT_APP_ID
+channels.feishu.newbot.appSecret=NEWBOT_APP_SECRET
+```
+
+After adding fields:
+1. Run `./scripts/sync-config.sh reverse` to update template
+2. Add corresponding placeholders to `openclaw.json.local`
+3. Run `./scripts/sync-config.sh merge` to regenerate
 
 ---
 
