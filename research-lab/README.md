@@ -1,8 +1,8 @@
 # UV Lab - Elite Research Laboratory
 
-> "Every researcher should be powerful enough to tackle any problem."
+> **"Every researcher should be powerful enough to tackle any problem."**
 
-Welcome to UV Lab - a research environment where each agent is a **versatile expert** capable of deep, cross-domain research. Our agents embody the spirit of brilliant open-source contributors who excel across systems, theory, and implementation.
+Welcome to UV Lab - a research environment where each agent is a **versatile expert** capable of deep, cross-domain research.
 
 ## Philosophy
 
@@ -13,120 +13,107 @@ Traditional AI assistants are narrowly specialized. Our agents are **elite resea
 - 🔧 **Systems expertise** - Building scalable, robust infrastructure
 - 📝 **Clear communication** - Documentation, papers, presentations
 
-## Agent Roster
+## Multi-Agent Architecture
 
-Each agent is named after groundbreaking open-source projects and inspired by their creators:
-
-| Agent | Inspired By | Key Projects | Expertise |
-|-------|-------------|--------------|-----------|
-| **Lianmin** | merrymercy (Lianmin Zheng) | SGLang, FastChat, Vicuna | LLM serving, compilers, distributed systems |
-| **Tianqi** | tqchen (Tianqi Chen) | XGBoost, TVM, DMLC | ML systems, optimization, scalable training |
-| **Zihao** | yzh119 (Zihao Ye) | FlashInfer, MLC-LLM, DGL | Kernel optimization, LLM deployment, graph ML |
-| **Tri** | tridao (Tri Dao) | Flash Attention, Princeton CS | Efficient attention, ML theory, HPC |
-
-## Skills Framework (pkbllm)
-
-All agents leverage the [pkbllm](https://github.com/uv-xiao/pkbllm) skills system - a curated repository of reusable instruction sets for effective LLM-human interaction.
-
-### Skill Categories
+This lab uses **OpenClaw Multi-Agent Architecture** with independent agents:
 
 ```
-pkbllm/
-├── common/         # Cross-domain skills (planning, execution, review)
-├── productivity/   # Engineering workflow (git, testing, debugging)
-├── knowledge/      # Domain expertise (research, analysis, synthesis)
-├── human/          # Human-facing materials (slides, reports, docs)
-└── bootstrap/      # Maintenance and updates
+Sir (uv) → Jarvis (Main) → Research Assistants (RA)
 ```
 
-### Core Workflows
+### Agent Roster
 
-1. **Discover** - `uv-using-pkb` to find the right skill
-2. **Execute** - Invoke skill with clear task definition
-3. **Generate** - Produce artifacts (code, docs, slides, reports)
-4. **Review** - Self-evaluate and iterate
-5. **Codify** - Extract lessons into knowledge base
+| Agent | ID | Inspired By | Key Projects | Expertise |
+|-------|-----|-------------|--------------|-----------|
+| **Jarvis** | `main` | - | - | Lab Director, coordination |
+| **Lianmin** | `lianmin` | merrymercy | SGLang, FastChat, Vicuna | LLM serving, compilers, distributed |
+| **Tianqi** | `tianqi` | tqchen | XGBoost, TVM, MLC | ML systems, optimization, training |
+| **Zihao** | `zihao` | yzh119 | FlashInfer, MLC-LLM, DGL | Kernel optimization, deployment |
+| **Tri** | `tri` | tridao | Flash Attention | Attention, theory, algorithms |
 
-## Workspace Structure
+### Agent Workspaces
+
+Each agent has an independent workspace:
 
 ```
-research-lab/
-├── agents/              # Agent configurations
-│   ├── README.md        # This philosophy document
-│   ├── sglang.md        # LLM systems expert
-│   ├── xgboost.md       # ML systems expert
-│   ├── flashinfer.md    # Kernel optimization expert
-│   └── flashattn.md     # Attention/theory expert
-├── projects/            # Active research projects
-│   └── <project-name>/
-│       ├── README.md
-│       ├── notes/
-│       ├── code/
-│       └── outputs/
-├── notes/               # Knowledge base & literature notes
-│   ├── papers/          # Paper summaries
-│   ├── concepts/        # Concept explanations
-│   └── meetings/        # Research discussions
-└── .references/         # Cached sources (gitignored)
-    ├── pdfs/            # Downloaded papers
-    ├── arxiv/           # arXiv snapshots
-    └── repos/           # Cloned repositories
+~/.openclaw/
+├── workspace/                 # Jarvis (main)
+├── agents/lianmin/workspace/  # Lianmin
+├── agents/tianqi/workspace/   # Tianqi
+├── agents/zihao/workspace/    # Zihao
+└── agents/tri/workspace/      # Tri
 ```
+
+### Communication
+
+Each agent has **independent Feishu bot integration**:
+- Direct message an agent → Task assigned to that agent
+- Message Jarvis → Task analyzed and dispatched to appropriate RA(s)
+
+### Collaboration Flow
+
+1. **Sir** sends task to appropriate agent (or Jarvis)
+2. **Agent** executes independently with full context
+3. **Cross-agent collaboration** via `sessions_spawn` when needed
+4. **Results** delivered directly or synthesized by Jarvis
+
+## Skills Framework
+
+Agents can use:
+- **Per-agent skills** - Stored in `<workspace>/skills/` (agent-specific)
+- **Shared skills** - Stored in `~/.openclaw/skills/` (all agents)
+- **Bundled skills** - Shipped with OpenClaw
+
+See [ClawHub](https://clawhub.com) for skill discovery and installation.
 
 ## Getting Started
-
-### OpenClaw Studio
-
-The lab uses OpenClaw Studio for visibility and management:
-
-```bash
-cd /home/admin/openclaw-studio
-npm run dev
-```
-
-Then open http://localhost:3000 and connect with:
-- **Upstream URL:** ws://localhost:18789
-- **Token:** (from gateway config)
 
 ### Spawning Research Agents
 
 ```javascript
-// Example: Research and implement efficient attention (Tri)
+// Direct agent spawn
 sessions_spawn({
-  agentId: "main",
-  task: "Research flash attention variants and implement optimized kernel",
-  label: "tri-research"
-})
-
-// Example: Build LLM serving infrastructure (Lianmin)
-sessions_spawn({
-  agentId: "main",
+  agentId: "lianmin",
   task: "Design serving architecture for multi-model deployment",
   label: "lianmin-serving"
 })
+
+// Via Jarvis dispatch
+sessions_spawn({
+  agentId: "main",
+  task: "Research and implement efficient attention",
+  label: "tri-research"
+})
 ```
 
-### Using pkbllm Skills
+### Using Skills
 
 ```bash
+# Install skill to current agent workspace
+clawhub install <skill-slug>
+
 # List available skills
-npx skills add . --list
+clawhub list
+```
 
-# Install skills for project (recommended: project scope)
-npx skills add . -a codex --skill '*' -y
+## Directory Structure
 
-# Use in AGENTS.md (recommended workflow)
-python /path/to/pkbllm/bootstrap/scripts/pkb_agents_md.py assemble \
-  --query "implement efficient attention" \
-  --agents-md ./AGENTS.md \
-  --pick --init
+```
+research-lab/
+├── agents/              # Agent persona reference docs
+│   ├── lianmin.md
+│   ├── tianqi.md
+│   ├── zihao.md
+│   └── tri.md
+├── reports/             # Shared research outputs
+├── MULTI-AGENT-WORKFLOW.md  # Collaboration patterns
+└── SETUP.md             # Setup instructions
 ```
 
 ## GitHub Repositories
 
 - **Working Repository:** https://github.com/uv-xiao/uvlab (Obsidian vault)
-- **Skills Framework:** https://github.com/uv-xiao/pkbllm
-- **Studio:** https://github.com/grp06/openclaw-studio
+- **Lab Framework:** https://github.com/uv-xiao/pkbllm
 
 ## Lab Leadership
 
@@ -136,11 +123,10 @@ python /path/to/pkbllm/bootstrap/scripts/pkb_agents_md.py assemble \
 
 ## Next Steps
 
-1. **Start a project** - Create folder in `projects/`
-2. **Spawn an agent** - Pick the right expert for the task
-3. **Use pkbllm skills** - Invoke the right skill at the right time
-4. **Document findings** - Write to `notes/` and `MEMORY.md`
-5. **Generate materials** - Slides, reports, code, papers
+1. **Configure Feishu bots** - One per agent in OpenClaw
+2. **Start a project** - Create folder in agent workspace
+3. **Spawn an agent** - Pick the right expert for the task
+4. **Document findings** - Write to reports and MEMORY.md
 
 ---
 

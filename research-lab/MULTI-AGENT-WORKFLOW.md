@@ -7,35 +7,32 @@ This document describes how Jarvis (Lab Director) coordinates with specialized r
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         Sir (uv)                             │
-│                    Sends task to Jarvis                      │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Jarvis (Main)                           │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  1. Receive & Analyze Task                           │   │
-│  │  2. Dispatch to appropriate RA agent(s)              │   │
-│  │  3. Monitor progress & coordinate collaboration      │   │
-│  │  4. Synthesize results                               │   │
-│  │  5. Deliver final output to Sir                      │   │
-│  └──────────────────────────────────────────────────────┘   │
+│              Direct message to specific agent                │
+│                     OR message Jarvis                        │
 └─────────────────────────────────────────────────────────────┘
                               │
               ┌───────────────┼───────────────┐
               │               │               │
               ▼               ▼               ▼
     ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-    │  Lianmin    │  │   Tianqi    │  │   Zihao     │
-    │  (serving)  │  │ (optimization)│ │  (kernels)  │
+    │   Jarvis    │  │   Lianmin   │  │   Tianqi    │
+    │  (director) │  │  (serving)  │  │(optimization)│
     └─────────────┘  └─────────────┘  └─────────────┘
                               │
-                              ▼
-                    ┌─────────────┐
-                    │    Tri      │
-                    │  (attention)│
-                    └─────────────┘
+              ┌───────────────┼───────────────┐
+              │               │               │
+              ▼               ▼               ▼
+                    ┌─────────────┐  ┌─────────────┐
+                    │   Zihao     │  │    Tri      │
+                    │  (kernels)  │  │  (attention)│
+                    └─────────────┘  └─────────────┘
 ```
+
+Each agent runs independently with its own:
+- **Feishu bot** - Direct messaging
+- **Workspace** - `~/.openclaw/agents/{agent}/workspace/`
+- **Skills** - Per-agent in `workspace/skills/`
+- **Memory** - Independent context
 
 ## Agent Roster
 
@@ -53,22 +50,28 @@ This document describes how Jarvis (Lab Director) coordinates with specialized r
 Sir sends a task to Jarvis:
 > "Build an efficient LLM serving system for our models"
 
-### 2. Task Analysis
+### 2. Task Analysis (Jarvis only)
 
-Jarvis analyzes the task using the dispatcher:
-```python
-from research_lab.dispatcher import dispatch
-result = dispatch("Build an efficient LLM serving system")
-# Returns: primary_agent="lianmin", secondary_agent="zihao"
+If Sir messages **Jarvis**, Jarvis analyzes and spawns appropriate agent(s):
+```javascript
+// Analyze task keywords
+const keywords = extractKeywords(task);
+const agent = routeToAgent(keywords);
+// e.g., "serving" → "lianmin", "kernel" → "zihao"
 ```
+
+If Sir messages an **RA directly**, that agent handles the task independently.
 
 ### 3. Agent Dispatch
 
-Jarvis spawns the primary agent with context:
+**Direct to RA:**
+Sir messages Lianmin directly → Lianmin receives task and executes.
+
+**Via Jarvis:**
 ```javascript
 sessions_spawn({
-  agentId: "main",
-  task: result.task_prompt,
+  agentId: "lianmin",
+  task: task_prompt,
   label: `lianmin-${task_id}`
 })
 ```
@@ -102,9 +105,9 @@ Jarvis presents final result:
 - Recommendations
 - Offers follow-up actions
 
-## Dispatcher Logic
+## Task Routing Logic
 
-The dispatcher (`research-lab/dispatcher.py`) routes tasks based on keyword matching:
+Jarvis uses keyword matching to route tasks:
 
 ### Lianmin Keywords
 `serving`, `inference`, `compiler`, `distributed`, `deployment`, `api`, `framework`, `runtime`, `vicuna`, `sglang`, `fastchat`
