@@ -16,11 +16,31 @@ Sir (uv) → Jarvis (Main) → Research Assistants (RA)
 
 | Agent | ID | Expertise | Workspace |
 |-------|-----|-----------|-----------|
-| **Jarvis** | `main` | Lab Director, task coordination | `~/.openclaw/workspace/` |
-| **Lianmin** | `lianmin` | LLM serving, compilers, distributed | `~/.openclaw/agents/lianmin/workspace/` |
-| **Tianqi** | `tianqi` | ML systems, optimization, training | `~/.openclaw/agents/tianqi/workspace/` |
-| **Zihao** | `zihao` | Kernel optimization, deployment | `~/.openclaw/agents/zihao/workspace/` |
-| **Tri** | `tri` | Attention, theory, algorithms | `~/.openclaw/agents/tri/workspace/` |
+| **Jarvis** | `main` | Lab Director, task coordination | `./` (root) |
+| **Lianmin** | `lianmin` | LLM serving, compilers, distributed | `./agents/lianmin/` |
+| **Tianqi** | `tianqi` | ML systems, optimization, training | `./agents/tianqi/` |
+| **Zihao** | `zihao` | Kernel optimization, deployment | `./agents/zihao/` |
+| **Tri** | `tri` | Attention, theory, algorithms | `./agents/tri/` |
+
+### Repository Structure
+
+```
+uvlab/
+├── AGENTS.md                 ← Jarvis identity & lab overview
+├── research-lab/             ← Shared lab resources
+│   ├── agents/               ← Agent persona reference docs
+│   ├── reports/              ← Shared research outputs
+│   ├── MULTI-AGENT-WORKFLOW.md
+│   └── README.md
+├── agents/                   ← Individual agent workspaces
+│   ├── lianmin/              ← Lianmin workspace
+│   │   ├── AGENTS.md         ← Lianmin identity
+│   │   └── skills/           ← Lianmin-specific skills
+│   ├── tianqi/               ← Tianqi workspace
+│   ├── zihao/                ← Zihao workspace
+│   └── tri/                  ← Tri workspace
+└── skills/                   ← Shared skills (all agents)
+```
 
 ### Communication
 
@@ -34,15 +54,6 @@ Each agent has **independent Feishu bot integration**:
 2. **Agent** executes independently with full context
 3. **Cross-agent collaboration** via `sessions_spawn` when needed
 4. **Results** delivered directly or synthesized by Jarvis
-
-## Shared Resources
-
-```
-research-lab/
-├── agents/           # Agent personas (reference)
-├── reports/          # Shared research outputs
-└── MULTI-AGENT-WORKFLOW.md  # Collaboration patterns
-```
 
 ## Getting Started
 
