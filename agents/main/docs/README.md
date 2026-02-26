@@ -99,15 +99,20 @@ clawhub list
 ## Directory Structure
 
 ```
-research-lab/
-├── agents/              # Agent persona reference docs
-│   ├── lianmin.md
-│   ├── tianqi.md
-│   ├── zihao.md
-│   └── tri.md
-├── reports/             # Shared research outputs
-├── MULTI-AGENT-WORKFLOW.md  # Collaboration patterns
-└── SETUP.md             # Setup instructions
+~/.openclaw/
+├── workspace/                # Jarvis (main) workspace
+│   ├── AGENTS.md
+│   ├── skills/
+│   └── memory/
+└── agents/                   # All agent workspaces
+    ├── main/
+    │   └── docs/             # Lab documentation & reports
+    ├── lianmin/
+    │   ├── workspace/
+    │   └── docs/README.md    # Agent persona
+    ├── tianqi/
+    ├── zihao/
+    └── tri/
 ```
 
 ## GitHub Repositories

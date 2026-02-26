@@ -1,0 +1,22 @@
+# OpenClaw system files (not part of uvlab repo)
+canvas/
+completions/
+cron/
+devices/
+identity/
+logs/
+
+# OpenClaw config and data files
+openclaw.json
+openclaw.json.bak
+openclaw.json.bak.*
+openclaw.json.wuying
+update-check.json
+
+# Backup archives
+*.tar.gz
+workspace.bak.*/
+
+# Workspace internal files that shouldn't be tracked
+workspace/.obsidian/
+workspace/.git/

@@ -25,21 +25,20 @@ Sir (uv) → Jarvis (Main) → Research Assistants (RA)
 ### Repository Structure
 
 ```
-uvlab/
-├── AGENTS.md                 ← Jarvis identity & lab overview
-├── research-lab/             ← Shared lab resources
-│   ├── agents/               ← Agent persona reference docs
-│   ├── reports/              ← Shared research outputs
-│   ├── MULTI-AGENT-WORKFLOW.md
-│   └── README.md
-├── agents/                   ← Individual agent workspaces
-│   ├── lianmin/              ← Lianmin workspace
-│   │   ├── AGENTS.md         ← Lianmin identity
-│   │   └── skills/           ← Lianmin-specific skills
-│   ├── tianqi/               ← Tianqi workspace
-│   ├── zihao/                ← Zihao workspace
-│   └── tri/                  ← Tri workspace
-└── skills/                   ← Shared skills (all agents)
+~/.openclaw/
+├── workspace/                ← Jarvis (main) workspace
+│   ├── AGENTS.md             ← Jarvis identity
+│   ├── skills/               ← Shared skills
+│   └── memory/               ← Shared memory
+└── agents/                   ← Individual agent workspaces
+    ├── main/                 ← Jarvis (alias to workspace)
+    ├── lianmin/              ← Lianmin
+    │   ├── workspace/        ← Working files
+    │   ├── docs/             ← Documentation
+    │   └── skills/           ← Lianmin-specific skills
+    ├── tianqi/               ← Tianqi
+    ├── zihao/                ← Zihao
+    └── tri/                  ← Tri
 ```
 
 ### Communication

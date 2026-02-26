@@ -58,7 +58,7 @@ scp /tmp/openclaw-migration-*.tar.gz user@target-host:/tmp/
 | ✅ OpenClaw 配置 | `~/.openclaw/openclaw.json` |
 | ✅ Extensions/Plugins | Feishu、DingTalk 等插件 |
 | ✅ Agents 配置 | 多 Agent 系统配置 |
-| ✅ Workspace | 所有工作区文件 |
+| ✅ Workspace | 所有工作区文件 (Jarvis/main) |
 | ✅ Memory | 会话记忆文件 |
 | ✅ Git 配置 | 自动配置 uv-agents 身份 |
 
