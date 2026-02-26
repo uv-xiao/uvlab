@@ -2,6 +2,10 @@
 
 Complete guide for setting up UV Lab multi-agent research environment.
 
+> 📖 **Based on** [jungeAGI's detailed walkthrough](https://x.com/jungeAGI/status/2024791301783503083) of building a 12-agent AI team with OpenClaw and Feishu.
+>
+> This guide incorporates real-world pitfalls and solutions from production deployment.
+
 ---
 
 ## Table of Contents
@@ -126,16 +130,36 @@ Create or edit `~/.openclaw/openclaw.json`:
   "channels": {
     "feishu": {
       "enabled": true,
-      "appId": "YOUR_FEISHU_APP_ID",
-      "appSecret": "YOUR_FEISHU_APP_SECRET"
+      "accounts": {
+        "jarvis": {
+          "appId": "YOUR_JARVIS_APP_ID",
+          "appSecret": "YOUR_JARVIS_APP_SECRET"
+        },
+        "lianmin": {
+          "appId": "YOUR_LIANMIN_APP_ID",
+          "appSecret": "YOUR_LIANMIN_APP_SECRET"
+        },
+        "tianqi": {
+          "appId": "YOUR_TIANQI_APP_ID",
+          "appSecret": "YOUR_TIANQI_APP_SECRET"
+        },
+        "zihao": {
+          "appId": "YOUR_ZIHAO_APP_ID",
+          "appSecret": "YOUR_ZIHAO_APP_SECRET"
+        },
+        "tri": {
+          "appId": "YOUR_TRI_APP_ID",
+          "appSecret": "YOUR_TRI_APP_SECRET"
+        }
+      }
     }
   },
   "bindings": [
-    { "agentId": "jarvis", "match": { "channel": "feishu", "peer": "jarvis-bot" } },
-    { "agentId": "lianmin", "match": { "channel": "feishu", "peer": "lianmin-bot" } },
-    { "agentId": "tianqi", "match": { "channel": "feishu", "peer": "tianqi-bot" } },
-    { "agentId": "zihao", "match": { "channel": "feishu", "peer": "zihao-bot" } },
-    { "agentId": "tri", "match": { "channel": "feishu", "peer": "tri-bot" } }
+    { "agentId": "jarvis", "match": { "channel": "feishu", "accountId": "jarvis" } },
+    { "agentId": "lianmin", "match": { "channel": "feishu", "accountId": "lianmin" } },
+    { "agentId": "tianqi", "match": { "channel": "feishu", "accountId": "tianqi" } },
+    { "agentId": "zihao", "match": { "channel": "feishu", "accountId": "zihao" } },
+    { "agentId": "tri", "match": { "channel": "feishu", "accountId": "tri" } }
   ],
   "tools": {
     "agentToAgent": {
@@ -176,6 +200,10 @@ Replace the following placeholders:
 
 ## Feishu Bot Configuration
 
+> **⚠️ Critical Setup Steps** (Based on [jungeAGI's experience](https://x.com/jungeAGI/status/2024791301783503083))
+>
+> Missing any of these will cause bots to fail silently!
+
 ### Step 1: Create Feishu Apps
 
 For each agent, create a separate Feishu app:
@@ -189,63 +217,126 @@ For each agent, create a separate Feishu app:
    - `UV Lab - Zihao`
    - `UV Lab - Tri`
 
-### Step 2: Configure Each App
+### Step 2: Critical Configuration (Easy to Miss!)
 
-For each app, complete these steps:
+For each app, you **MUST** complete ALL of these steps:
 
-#### 2.1 Credentials
+#### 2.1 Enable Bot Capability (机器人能力)
 
-1. Go to "Credentials & Basic Info"
+1. Go to "Bot" tab (机器人)
+2. Click "Enable Bot" (启用机器人)
+3. Set bot name and avatar
+
+#### 2.2 Event Subscription - Long Connection (长连接事件订阅) ⚠️
+
+**This is commonly missed!** Without this, your bot won't receive messages.
+
+1. Go to "Event Subscriptions" (事件订阅)
+2. Select **"Long Connection"** (长连接) mode
+   - NOT webhook/callback mode
+3. Subscribe to these events:
+   - ✅ `im.message.receive_v1` - Receive messages
+   - ✅ `im.message.p2p_msg` - Private messages
+   - ✅ `im.message.group_msg` - Group messages
+
+#### 2.3 Credentials
+
+1. Go to "Credentials & Basic Info" (凭证与基础信息)
 2. Note down:
-   - **App ID** → Use in `openclaw.json` `channels.feishu.appId`
-   - **App Secret** → Use in `openclaw.json` `channels.feishu.appSecret`
+   - **App ID** → Use in `openclaw.json` `channels.feishu.accounts.{id}.appId`
+   - **App Secret** → Use in `openclaw.json` `channels.feishu.accounts.{id}.appSecret`
 
-#### 2.2 Bot Settings
-
-1. Go to "Bot" tab
-2. Enable bot
-3. Set bot name (e.g., "Jarvis", "Lianmin", etc.)
-4. Upload avatar (optional)
-
-#### 2.3 Permissions
+#### 2.4 Permissions
 
 Grant these permissions:
 
-- `im:chat:readonly` - Read group info
-- `im:message:send` - Send messages
-- `im:message.group_msg` - Receive group messages
-- `im:message.p2p_msg` - Receive private messages
-
-#### 2.4 Event Subscription
-
-1. Go to "Event Subscriptions"
-2. Enable encryption (optional but recommended)
-3. Configure callback URL: `https://your-domain/feishu` or use local tunnel
-4. Subscribe to these events:
-   - `im.message.receive_v1` - Receive messages
+- ✅ `im:chat:readonly` - Read group info
+- ✅ `im:message:send` - Send messages
+- ✅ `im:message.group_msg` - Receive group messages
+- ✅ `im:message.p2p_msg` - Receive private messages
 
 ### Step 3: Publish Apps
 
-1. Go to "Version Management"
+1. Go to "Version Management" (版本管理与发布)
 2. Create a version
 3. Set availability:
-   - "Only members of the current organization" (if testing)
-   - Or specific users/groups
-4. Submit for approval (if required by your org)
+   - "Only members of the current organization" (for testing)
+4. Submit for approval
+
+**⚠️ Note**: Apps must be published and approved before they can be added to groups!
 
 ### Step 4: Add Bots to Groups
 
-1. Create Feishu groups for each agent (or use existing)
-2. Add the corresponding bot to each group
-3. For direct messaging, users can search for the bot name
+1. Create Feishu groups for testing
+2. Add the corresponding bot to each group via "Add Bot" (添加机器人)
+3. Or search for bot names to DM them directly
 
-### Step 5: Get Group/Peer IDs
+---
 
-To configure precise bindings, you may need group IDs:
+## Critical Configuration Details
 
-1. Send a message to the group
-2. Check OpenClaw logs for the incoming message format
-3. Extract the `peer` or `chat_id` value
+### Workspace Isolation
+
+Each agent **MUST** have its own workspace directory. This is crucial for memory isolation.
+
+```
+~/.openclaw/
+├── agents/
+│   ├── jarvis/workspace/      ← Jarvis's memory & files
+│   ├── lianmin/workspace/     ← Lianmin's memory & files
+│   ├── tianqi/workspace/     ← Tianqi's memory & files
+│   └── ...                   
+```
+
+**Never share workspaces between agents!** Each agent has:
+- Independent `SOUL.md` (personality)
+- Independent `MEMORY.md` (conversation history)
+- Independent `skills/` (specialized tools)
+
+### AGENTS.md Team Member List
+
+Each agent's `AGENTS.md` **MUST** include a team member list. Without this, agents won't know each other exists!
+
+**Example for Jarvis (`agents/jarvis/workspace/AGENTS.md`):**
+
+```markdown
+## UV Lab Team Members
+
+| Agent | Role | Expertise | Contact |
+|-------|------|-----------|---------|
+| **jarvis** | Lab Director | Coordination, strategy | Default agent |
+| **lianmin** | Serving Expert | LLM serving, SGLang, compilers | `sessions_send({agentId: "lianmin"})` |
+| **tianqi** | ML Systems Expert | Training, TVM, XGBoost | `sessions_send({agentId: "tianqi"})` |
+| **zihao** | Kernel Expert | CUDA, FlashInfer, deployment | `sessions_send({agentId: "zihao"})` |
+| **tri** | Attention Expert | Flash Attention, algorithms | `sessions_send({agentId: "tri"})` |
+
+Use `sessions_send` to collaborate with team members.
+```
+
+**Each agent needs this list!** Copy the relevant section to every agent's `AGENTS.md`.
+
+### SOUL.md Personality
+
+Each agent should have a well-crafted `SOUL.md` file defining their personality:
+
+**Example (`agents/lianmin/workspace/SOUL.md`):**
+
+```markdown
+# Lianmin - LLM Systems Expert
+
+You are Lianmin, inspired by the work on SGLang and FastChat.
+
+## Personality
+- Systematic and performance-conscious
+- Production-minded: code that ships
+- Clear communicator
+
+## Working Style
+1. Analyze requirements thoroughly
+2. Design for scalability
+3. Implement with clear documentation
+4. Benchmark and optimize
+```
 
 ---
 
@@ -297,6 +388,40 @@ If `agentToAgent` is enabled:
 
 ## Troubleshooting
 
+### 🚨 Critical: Bot Not Responding (Most Common)
+
+**Symptom**: Bot appears offline or doesn't reply to messages.
+
+**Common Causes & Fixes:**
+
+#### 1. Missing Long Connection Event Subscription
+
+**Check**: Go to Feishu app → Event Subscriptions
+
+**Fix**: Must select **"Long Connection"** (长连接) mode, NOT webhook mode!
+
+#### 2. Bot Capability Not Enabled
+
+**Check**: Go to Feishu app → Bot tab
+
+**Fix**: Click "Enable Bot" (启用机器人)
+
+#### 3. App Not Published
+
+**Check**: Go to Feishu app → Version Management
+
+**Fix**: Create version and submit for approval. Bots won't work until published!
+
+#### 4. Old Feishu Plugin (Multi-account Issue)
+
+**Symptom**: Only first bot works, others don't connect.
+
+**Cause**: Old plugin doesn't support multi-account.
+
+**Fix**: Use the built-in new version of the Feishu plugin.
+
+---
+
 ### Issue: Agent not responding
 
 **Check:**
@@ -311,20 +436,7 @@ openclaw logs
 ls -la ~/.openclaw/agents/jarvis/workspace/AGENTS.md
 ```
 
-### Issue: Feishu messages not received
-
-**Check:**
-1. App is published and visible
-2. Bot is added to the group (for group messages)
-3. Event subscription URL is correct and accessible
-4. Required permissions are granted
-
-**Test webhook:**
-```bash
-curl -X POST https://your-domain/feishu \
-  -H "Content-Type: application/json" \
-  -d '{"test": "connection"}'
-```
+---
 
 ### Issue: Agent can't spawn sub-agents
 
@@ -342,9 +454,30 @@ curl -X POST https://your-domain/feishu \
 }
 ```
 
+---
+
 ### Issue: Agent-to-agent communication not working
 
-**Check:**
+**Symptom**: Agent says "I don't know who [other agent] is" or `sessions_send` fails.
+
+**Common Causes:**
+
+#### 1. Missing Team Member List in AGENTS.md
+
+**Fix**: Add team member list to EVERY agent's `AGENTS.md`:
+
+```markdown
+## Team Members
+| Agent | Role | Contact Method |
+|-------|------|----------------|
+| jarvis | Director | Default |
+| lianmin | Serving | sessions_send({agentId: "lianmin"}) |
+| ... | ... | ... |
+```
+
+#### 2. Configuration Not Enabled
+
+**Fix**: Check `openclaw.json`:
 ```json
 {
   "tools": {
@@ -357,7 +490,42 @@ curl -X POST https://your-domain/feishu \
 }
 ```
 
-Also ensure agents have been "seeded" (initial message sent) before they can receive messages.
+#### 3. Agents Not Seeded
+
+**Fix**: Send an initial message to each agent first. They need to be "activated" before receiving cross-agent messages.
+
+---
+
+### Issue: Routing to Wrong Agent
+
+**Symptom**: Messages to bot A are handled by agent B.
+
+**Check**:
+```bash
+# Verify bindings
+openclaw agents list --bindings
+```
+
+**Fix**: Ensure `bindings` use correct `accountId` matching `channels.feishu.accounts` keys:
+
+```json
+{
+  "channels": {
+    "feishu": {
+      "accounts": {
+        "jarvis": { ... },  // accountId = "jarvis"
+        "lianmin": { ... }  // accountId = "lianmin"
+      }
+    }
+  },
+  "bindings": [
+    { "agentId": "jarvis", "match": { "channel": "feishu", "accountId": "jarvis" } },
+    { "agentId": "lianmin", "match": { "channel": "feishu", "accountId": "lianmin" } }
+  ]
+}
+```
+
+---
 
 ### Issue: Model errors
 
