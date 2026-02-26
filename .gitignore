@@ -7,7 +7,9 @@ identity/
 logs/
 
 # OpenClaw config and data files
+# Main config file (contains sensitive data, use template + local instead)
 openclaw.json
+openclaw.json.local
 openclaw.json.bak
 openclaw.json.bak.*
 openclaw.json.wuying

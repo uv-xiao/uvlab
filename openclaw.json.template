@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.24",
+    "lastTouchedAt": "{{TIMESTAMP}}"
+  },
+  "wizard": {
+    "lastRunAt": "2026-02-26T02:46:49.947Z",
+    "lastRunVersion": "2026.2.24",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local"
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "bailian": {
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "apiKey": "{{BAILIAN_API_KEY}}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "qwen3-max-2026-01-23",
+            "name": "Qwen3 Max Thinking",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      },
+      "generic": {
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
+        "apiKey": "{{GENERIC_API_KEY}}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "qwen3.5-plus",
+            "name": "qwen3.5-plus",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000,
+            "maxTokens": 4096
+          },
+          {
+            "id": "qwen3-coder-next",
+            "name": "qwen3-coder-next",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 262144,
+            "maxTokens": 65536
+          },
+          {
+            "id": "qwen3-coder-plus",
+            "name": "qwen3-coder-plus",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 65536
+          },
+          {
+            "id": "MiniMax-M2.5",
+            "name": "MiniMax-M2.5",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 65536
+          },
+          {
+            "id": "glm-5",
+            "name": "glm-5",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 202752,
+            "maxTokens": 16384
+          },
+          {
+            "id": "glm-4.7",
+            "name": "glm-4.7",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 202752,
+            "maxTokens": 16384
+          },
+          {
+            "id": "kimi-k2.5",
+            "name": "kimi-k2.5",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 262144,
+            "maxTokens": 32768
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "{{HOME}}/.openclaw/agents/jarvis/workspace",
+      "compaction": { "mode": "safeguard" },
+      "maxConcurrent": 4,
+      "subagents": { "maxConcurrent": 8 },
+      "model": { "primary": "generic/qwen3.5-plus" },
+      "models": { "generic/qwen3.5-plus": {} }
+    },
+    "list": [
+      {
+        "id": "jarvis",
+        "default": true,
+        "workspace": "{{HOME}}/.openclaw/agents/jarvis/workspace",
+        "sandbox": { "mode": "off" }
+      },
+      {
+        "id": "lianmin",
+        "workspace": "{{HOME}}/.openclaw/agents/lianmin/workspace",
+        "sandbox": { "mode": "off" }
+      },
+      {
+        "id": "tianqi",
+        "workspace": "{{HOME}}/.openclaw/agents/tianqi/workspace",
+        "sandbox": { "mode": "off" }
+      },
+      {
+        "id": "zihao",
+        "workspace": "{{HOME}}/.openclaw/agents/zihao/workspace",
+        "sandbox": { "mode": "off" }
+      },
+      {
+        "id": "tri",
+        "workspace": "{{HOME}}/.openclaw/agents/tri/workspace",
+        "sandbox": { "mode": "off" }
+      }
+    ]
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "channels": {
+    "feishu": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "accounts": {
+        "jarvis": {
+          "appId": "{{JARVIS_APP_ID}}",
+          "appSecret": "{{JARVIS_APP_SECRET}}"
+        },
+        "lianmin": {
+          "appId": "{{LIANMIN_APP_ID}}",
+          "appSecret": "{{LIANMIN_APP_SECRET}}"
+        },
+        "tianqi": {
+          "appId": "{{TIANQI_APP_ID}}",
+          "appSecret": "{{TIANQI_APP_SECRET}}"
+        },
+        "zihao": {
+          "appId": "{{ZIHAO_APP_ID}}",
+          "appSecret": "{{ZIHAO_APP_SECRET}}"
+        },
+        "tri": {
+          "appId": "{{TRI_APP_ID}}",
+          "appSecret": "{{TRI_APP_SECRET}}"
+        }
+      }
+    }
+  },
+  "bindings": [
+    { "agentId": "jarvis", "match": { "channel": "feishu", "accountId": "jarvis" } },
+    { "agentId": "lianmin", "match": { "channel": "feishu", "accountId": "lianmin" } },
+    { "agentId": "tianqi", "match": { "channel": "feishu", "accountId": "tianqi" } },
+    { "agentId": "zihao", "match": { "channel": "feishu", "accountId": "zihao" } },
+    { "agentId": "tri", "match": { "channel": "feishu", "accountId": "tri" } }
+  ],
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "{{GATEWAY_AUTH_TOKEN}}"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    }
+  },
+  "plugins": {
+    "entries": {
+      "feishu": { "enabled": true }
+    }
+  },
+  "tools": {
+    "agentToAgent": {
+      "enabled": true,
+      "allow": ["jarvis", "lianmin", "tianqi", "zihao", "tri"]
+    },
+    "sessions": {
+      "visibility": "all"
+    }
+  }
+}

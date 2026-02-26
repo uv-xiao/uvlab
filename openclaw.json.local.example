@@ -1,0 +1,30 @@
+# OpenClaw Local Configuration
+# Copy this file to openclaw.json.local and fill in your sensitive values
+# DO NOT commit openclaw.json.local to git!
+
+# Model API Keys
+BAILIAN_API_KEY=your_bailian_api_key_here
+GENERIC_API_KEY=your_generic_api_key_here
+
+# System
+HOME=/home/your_username
+TIMESTAMP=2026-02-26T13:01:03.262Z
+
+# Feishu App Credentials
+JARVIS_APP_ID=cli_xxxxxxxxxxxxxxx
+JARVIS_APP_SECRET=your_jarvis_app_secret_here
+
+LIANMIN_APP_ID=cli_xxxxxxxxxxxxxxx
+LIANMIN_APP_SECRET=your_lianmin_app_secret_here
+
+TIANQI_APP_ID=cli_xxxxxxxxxxxxxxx
+TIANQI_APP_SECRET=your_tianqi_app_secret_here
+
+ZIHAO_APP_ID=cli_xxxxxxxxxxxxxxx
+ZIHAO_APP_SECRET=your_zihao_app_secret_here
+
+TRI_APP_ID=cli_xxxxxxxxxxxxxxx
+TRI_APP_SECRET=your_tri_app_secret_here
+
+# Gateway Auth Token
+GATEWAY_AUTH_TOKEN=your_secure_random_token_here
