@@ -21,8 +21,8 @@ workspace.bak.*/
 **/.obsidian/
 **/.git/
 **/sessions/
-**/agent/auth.json
-**/agent/models.json
+**/agent/
+agents/main/
 
 # Legacy workspace (migrated to agents/jarvis/workspace/)
 workspace/
