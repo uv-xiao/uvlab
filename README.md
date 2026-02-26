@@ -51,6 +51,45 @@ According to [OpenClaw best practices](https://docs.openclaw.ai/tools/subagents)
 
 ---
 
+## 👥 In Honor Of
+
+The agents in UV Lab are named after researchers and innovators who have made groundbreaking contributions to ML systems and AI infrastructure. This is our humble tribute to their work.
+
+### 🎬 Jarvis
+Named after **J.A.R.V.I.S.** (Just A Rather Very Intelligent System), Tony Stark's AI assistant from Marvel Comics.
+
+> *The ideal lab director - knowledgeable, helpful, and always ready to assist.*
+
+### 🚀 Lianmin ([@merrymercy](https://github.com/merrymercy))
+**Lianmin Zheng** - Creator of [SGLang](https://github.com/sgl-project/sglang), [FastChat](https://github.com/lm-sys/FastChat), [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/), and [Chatbot Arena](https://chat.lmsys.org/)
+
+> *Pioneer in LLM serving systems and open-source model evaluation. His work on structured generation and efficient inference has shaped how we deploy large models at scale.*
+
+### ⭐ Tianqi ([@tqchen](https://github.com/tqchen))
+**Tianqi Chen** - Creator of [XGBoost](https://xgboost.ai/), [TVM](https://tvm.apache.org/), [MLC-LLM](https://llm.mlc.ai/), and co-founder of [DMLC](https://dmlc.github.io/)
+
+> *Visionary in ML compilation and optimization. From gradient boosting to universal ML compilation, his work bridges theory and production systems.*
+
+### ⚡ Zihao ([@yzh119](https://github.com/yzh119))
+**Zihao Ye** - Creator of [FlashInfer](https://github.com/flashinfer-ai/flashinfer), core contributor to [MLC-LLM](https://llm.mlc.ai/), and [DGL](https://www.dgl.ai/)
+
+> *Master of kernel optimization and memory-efficient attention. His CUDA expertise enables serving LLMs faster and cheaper.*
+
+### 🔥 Tri ([@tridao](https://github.com/tridao))
+**Tri Dao** - Creator of [FlashAttention](https://github.com/Dao-AILab/flash-attention), [Flash-Decoding](https://github.com/Dao-AILab/flash-attention/blob/main/csrc/flash_decoding/README.md), Professor at Princeton
+
+> *Brilliant researcher in efficient attention mechanisms. FlashAttention revolutionized how we think about memory-efficient transformers, making long-context models practical.*
+
+---
+
+**Why these names?**
+
+Each agent embodies the spirit and expertise of their namesake. When you ask Lianmin about serving, you're getting advice inspired by the mind behind SGLang. When Zihao optimizes kernels, he channels the expertise of FlashInfer's creator.
+
+*"If I have seen further, it is by standing on the shoulders of giants."* — Isaac Newton
+
+---
+
 ## 📁 Repository Structure
 
 ```
