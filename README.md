@@ -247,7 +247,7 @@ sessions_send({
 ### For Agents
 
 - **Embody your persona** - Think like your inspiration
-- **Use appropriate skills** - Invoke pkbllm skills when needed
+- **Use appropriate skills** - Leverage available skills when needed
 - **Be production-minded** - Code that ships, docs that help
 - **Escalate when needed** - Use `sessions_send` to collaborate
 
@@ -264,7 +264,7 @@ sessions_send({
 
 - [Multi-Agent Workflow](agents/jarvis/workspace/docs/MULTI-AGENT-WORKFLOW.md) - Detailed collaboration patterns
 - [Setup Guide](agents/jarvis/workspace/docs/SETUP.md) - Environment setup instructions
-- [ThunderAgent Analysis](agents/jarvis/workspace/docs/thunderagent-analysis.md) - Technical analysis
+- [ThunderAgent Analysis](agents/jarvis/workspace/artifacts/reports/thunderagent-analysis.md) - Technical analysis
 
 ---
 
@@ -272,7 +272,7 @@ sessions_send({
 
 - [OpenClaw Documentation](https://docs.openclaw.ai)
 - [OpenClaw Multi-Agent Tools](https://docs.openclaw.ai/tools/multi-agent-sandbox-tools)
-- [PKBLLM Framework](https://github.com/uv-xiao/pkbllm)
+- [UV Lab Repository](https://github.com/uv-xiao/uvlab)
 
 ---
 

@@ -27,8 +27,8 @@ workspace.bak.*/
 agents/main/
 
 # Legacy workspace (migrated to agents/jarvis/workspace/)
-workspace/
-workspace.bak.*/
+/workspace/
+/workspace.bak.*/
 
 # Runtime data directories
 credentials/
