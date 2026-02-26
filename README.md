@@ -36,7 +36,7 @@ UV Lab is a multi-agent research environment built on [OpenClaw](https://opencla
 
 | Agent | ID | Expertise | Best For |
 |-------|-----|-----------|----------|
-| **Jarvis** | `main` | Lab coordination, task dispatch | Task analysis, agent orchestration |
+| **Jarvis** | `jarvis` | Lab coordination, task dispatch | Task analysis, agent orchestration |
 | **Lianmin** | `lianmin` | LLM serving, compilers, distributed | Inference engines, API design, SGLang |
 | **Tianqi** | `tianqi` | ML systems, optimization | Training frameworks, TVM, XGBoost |
 | **Zihao** | `zihao` | Kernel optimization, deployment | CUDA kernels, FlashInfer, quantization |
@@ -51,22 +51,18 @@ UV Lab is a multi-agent research environment built on [OpenClaw](https://opencla
 └── .openclaw/
     ├── .git/                     # This repository
     ├── .gitignore                # Excludes system/runtime files
-    ├── agents/                   # Research agents (sub-agents)
-    │   ├── lianmin/
-    │   │   ├── workspace/        # Agent workspace (tracked)
-    │   │   └── docs/             # Agent documentation (tracked)
-    │   ├── tianqi/
-    │   ├── tri/
-    │   └── zihao/
-    └── workspace/                # Jarvis (main agent) workspace
-        ├── AGENTS.md             # Agent configuration
-        ├── SOUL.md               # Lab identity
-        ├── docs/                 # Lab documentation
-        │   ├── MULTI-AGENT-WORKFLOW.md
-        │   ├── thunderagent-analysis.md
-        │   └── ...
-        ├── memory/               # Lab memory
-        └── skills/               # Shared skills
+    └── agents/                   # All agents
+        ├── jarvis/               # Jarvis (main/director agent)
+        │   └── workspace/        # Lab workspace
+        │       ├── AGENTS.md     # Agent configuration
+        │       ├── SOUL.md       # Lab identity
+        │       ├── docs/         # Lab documentation
+        │       ├── memory/       # Lab memory
+        │       └── skills/       # Shared skills
+        ├── lianmin/              # Research assistants
+        ├── tianqi/
+        ├── tri/
+        └── zihao/
 ```
 
 ---
@@ -98,14 +94,14 @@ Add to your `openclaw.json`:
 {
   "agents": {
     "defaults": {
-      "workspace": "/home/uvxiao/.openclaw/workspace",
+      "workspace": "/home/uvxiao/.openclaw/agents/jarvis/workspace",
       "model": { "primary": "generic/qwen3.5-plus" }
     },
     "list": [
       {
         "id": "main",
         "default": true,
-        "workspace": "/home/uvxiao/.openclaw/workspace"
+        "workspace": "/home/uvxiao/.openclaw/agents/jarvis/workspace"
       },
       {
         "id": "lianmin",
@@ -128,7 +124,7 @@ Add to your `openclaw.json`:
   "tools": {
     "agentToAgent": {
       "enabled": true,
-      "allow": ["main", "lianmin", "tianqi", "zihao", "tri"]
+      "allow": ["jarvis", "lianmin", "tianqi", "zihao", "tri"]
     },
     "sessions": {
       "visibility": "all"
@@ -202,7 +198,7 @@ sessions_spawn({
 
 ## 📚 Documentation
 
-- [Multi-Agent Workflow](workspace/docs/MULTI-AGENT-WORKFLOW.md) - Detailed collaboration patterns
+- [Multi-Agent Workflow](agents/jarvis/workspace/docs/MULTI-AGENT-WORKFLOW.md) - Detailed collaboration patterns
 - [Setup Guide](workspace/docs/SETUP.md) - Environment setup instructions
 - [ThunderAgent Analysis](workspace/docs/thunderagent-analysis.md) - Technical analysis
 

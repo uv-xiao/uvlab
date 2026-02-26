@@ -17,11 +17,10 @@ update-check.json
 *.tar.gz
 workspace.bak.*/
 
-# Workspace internal files that shouldn't be tracked
-workspace/.obsidian/
-workspace/.git/
-
-# Agent runtime files (sessions, auth, models)
+# Agent runtime files that shouldn't be tracked
+**/.obsidian/
+**/.git/
 **/sessions/
 **/agent/auth.json
 **/agent/models.json
+
