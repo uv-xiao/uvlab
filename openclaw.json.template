@@ -313,6 +313,18 @@
       }
     }
   },
+  "skills": {
+    "load": {
+      "extraDirs": [],
+      "watch": true,
+      "watchDebounceMs": 250
+    },
+    "install": {
+      "preferBrew": true,
+      "nodeManager": "npm"
+    },
+    "entries": {}
+  },
   "tools": {
     "agentToAgent": {
       "enabled": true,

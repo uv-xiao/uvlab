@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # OpenClaw Skill Manager Script
-# Helper for installing skills to specific agents or all agents
+# Helper for managing skills in multi-agent environment
 #
 
 set -e
@@ -28,17 +28,18 @@ show_help() {
 Usage: $0 <command> [options]
 
 Commands:
-  install-global <skill-name>     Install skill globally (all agents)
-  install-agent <agent> <skill>   Install skill to specific agent
-  list-agents                     List all configured agents
-  list-skills [agent]             List skills (global or for specific agent)
+  install <skill-slug> [agent]    Install skill (to agent workspace or shared)
+  list [agent]                    List skills (shared or per-agent)
   verify                          Verify skills configuration
+  setup-workspace <agent>         Create skills directory for agent
 
 Examples:
-  $0 install-global git-commit-helper
-  $0 install-agent jarvis git-commit-helper
-  $0 list-agents
-  $0 list-skills jarvis
+  $0 install git-commit-helper jarvis    # Install to jarvis workspace
+  $0 install git-commit-helper           # Install shared (all agents)
+  $0 list                                # List shared skills
+  $0 list jarvis                         # List jarvis skills
+  $0 verify
+  $0 setup-workspace jarvis
 
 EOF
 }
@@ -56,69 +57,109 @@ check_config() {
     fi
 }
 
-install_global() {
-    local skill_name="$1"
+get_agent_workspace() {
+    local agent_id="$1"
+    jq -r ".agents.list[] | select(.id == \"$agent_id\") | .workspace" "$CONFIG_FILE" 2>/dev/null
+}
+
+install_skill() {
+    local skill_slug="$1"
+    local agent_id="$2"
     
-    if [[ -z "$skill_name" ]]; then
-        log_error "Skill name required"
-        echo "Usage: $0 install-global <skill-name>"
+    if [[ -z "$skill_slug" ]]; then
+        log_error "Skill slug required"
+        echo "Usage: $0 install <skill-slug> [agent]"
         exit 1
     fi
     
-    log_step "Installing skill globally: $skill_name"
-    
-    # Install via openclaw CLI
-    if command -v openclaw &> /dev/null; then
-        openclaw skills install "$skill_name" || {
-            log_warn "Failed to install via openclaw CLI, attempting manual configuration..."
-        }
-    else
-        log_warn "openclaw CLI not found, using manual configuration"
+    # Check if clawhub is available
+    if ! command -v clawhub &> /dev/null; then
+        log_warn "clawhub CLI not found, trying openclaw..."
+        if ! command -v openclaw &> /dev/null; then
+            log_error "Neither clawhub nor openclaw CLI found"
+            log_info "Install manually from https://clawhub.com"
+            exit 1
+        fi
     fi
     
-    log_info "Skill '$skill_name' configured globally"
+    if [[ -n "$agent_id" ]]; then
+        # Install to specific agent workspace
+        local workspace=$(get_agent_workspace "$agent_id")
+        
+        if [[ -z "$workspace" || "$workspace" == "null" ]]; then
+            log_error "Agent '$agent_id' not found"
+            log_info "Available agents:"
+            list_agents
+            exit 1
+        fi
+        
+        local skills_dir="$workspace/skills"
+        mkdir -p "$skills_dir"
+        
+        log_step "Installing '$skill_slug' to $agent_id's workspace..."
+        
+        # Change to workspace and install
+        (cd "$workspace" && clawhub install "$skill_slug" 2>/dev/null) || \
+            log_warn "clawhub install may have failed, check manually"
+        
+        log_info "Skill installed to: $skills_dir/"
+    else
+        # Install shared (all agents)
+        local shared_dir="$HOME/.openclaw/skills"
+        mkdir -p "$shared_dir"
+        
+        log_step "Installing '$skill_slug' as shared skill..."
+        
+        (cd "$shared_dir" && clawhub install "$skill_slug" 2>/dev/null) || \
+            log_warn "clawhub install may have failed, check manually"
+        
+        log_info "Skill installed to: $shared_dir/"
+    fi
+    
     log_warn "Restart OpenClaw for changes to take effect:"
     log_warn "  openclaw gateway restart"
 }
 
-install_agent() {
+list_skills() {
     local agent_id="$1"
-    local skill_name="$2"
     
-    if [[ -z "$agent_id" || -z "$skill_name" ]]; then
-        log_error "Agent ID and skill name required"
-        echo "Usage: $0 install-agent <agent-id> <skill-name>"
-        exit 1
+    if [[ -n "$agent_id" ]]; then
+        # List agent-specific skills
+        local workspace=$(get_agent_workspace "$agent_id")
+        
+        if [[ -z "$workspace" || "$workspace" == "null" ]]; then
+            log_error "Agent '$agent_id' not found"
+            exit 1
+        fi
+        
+        log_step "Skills for agent '$agent_id':"
+        
+        local agent_skills_dir="$workspace/skills"
+        if [[ -d "$agent_skills_dir" ]]; then
+            echo "  Workspace skills ($agent_skills_dir):"
+            ls -1 "$agent_skills_dir" 2>/dev/null | sed 's/^/    - /' || echo "    (none)"
+        else
+            log_info "  No workspace skills directory"
+        fi
+    else
+        # List shared skills
+        log_step "Shared Skills (~/.openclaw/skills/):"
+        
+        if [[ -d "$HOME/.openclaw/skills" ]]; then
+            ls -1 "$HOME/.openclaw/skills" 2>/dev/null | sed 's/^/  - /' || echo "  (none)"
+        else
+            log_info "  No shared skills directory"
+        fi
+        
+        # List project skills
+        echo ""
+        log_step "Project Skills (.agents/skills/):"
+        if [[ -d "$PROJECT_DIR/.agents/skills" ]]; then
+            ls -1 "$PROJECT_DIR/.agents/skills" 2>/dev/null | sed 's/^/  - /' || echo "  (none)"
+        else
+            log_info "  No project skills directory"
+        fi
     fi
-    
-    check_config
-    
-    log_step "Installing skill '$skill_name' to agent '$agent_id'"
-    
-    # Check if agent exists
-    if ! jq -e ".agents.list[] | select(.id == \"$agent_id\")" "$CONFIG_FILE" > /dev/null 2>&1; then
-        log_error "Agent '$agent_id' not found in configuration"
-        log_info "Available agents:"
-        list_agents
-        exit 1
-    fi
-    
-    # Check if skill already installed for this agent
-    local has_skill=$(jq -r ".agents.list[] | select(.id == \"$agent_id\") | .skills // [] | contains([\"$skill_name\"])" "$CONFIG_FILE")
-    
-    if [[ "$has_skill" == "true" ]]; then
-        log_warn "Skill '$skill_name' is already installed for agent '$agent_id'"
-        exit 0
-    fi
-    
-    # Add skill to agent
-    local temp_file=$(mktemp)
-    jq ".agents.list |= map(if .id == \"$agent_id\" then .skills = (.skills // []) + [\"$skill_name\"] else . end)" "$CONFIG_FILE" > "$temp_file"
-    mv "$temp_file" "$CONFIG_FILE"
-    
-    log_info "Skill '$skill_name' added to agent '$agent_id'"
-    log_warn "Run './scripts/sync-config.sh reverse' to sync to template"
-    log_warn "Then restart OpenClaw: openclaw gateway restart"
 }
 
 list_agents() {
@@ -127,44 +168,45 @@ list_agents() {
     log_step "Configured Agents:"
     echo ""
     
-    jq -r '.agents.list[] | "  \(.id)\t\(.workspace // "N/A")\t\(.skills | length // 0) skills"' "$CONFIG_FILE" | \
-    while read -r line; do
-        echo -e "$line"
+    jq -r '.agents.list[] | "  \(.id)"' "$CONFIG_FILE" | while read -r agent_id; do
+        local workspace=$(get_agent_workspace "$agent_id")
+        local skills_dir="$workspace/skills"
+        local skill_count=0
+        
+        if [[ -d "$skills_dir" ]]; then
+            skill_count=$(ls -1 "$skills_dir" 2>/dev/null | wc -l)
+        fi
+        
+        echo "  $agent_id ($skill_count workspace skills)"
     done
-    
-    echo ""
-    log_info "Use 'list-skills <agent>' to see agent-specific skills"
 }
 
-list_skills() {
+setup_workspace() {
     local agent_id="$1"
     
-    if [[ -n "$agent_id" ]]; then
-        check_config
-        log_step "Skills for agent '$agent_id':"
-        
-        local skills=$(jq -r ".agents.list[] | select(.id == \"$agent_id\") | .skills // [] | join(\", \")" "$CONFIG_FILE")
-        
-        if [[ -z "$skills" || "$skills" == "null" ]]; then
-            log_info "  No agent-specific skills configured"
-        else
-            echo "  Agent-specific: $skills"
-        fi
-    else
-        log_step "Global Skills Configuration:"
-        
-        if command -v openclaw &> /dev/null; then
-            echo "  Installed skills:"
-            openclaw skills list 2>/dev/null || log_warn "  Could not list skills"
-        else
-            log_info "  openclaw CLI not available"
-        fi
+    if [[ -z "$agent_id" ]]; then
+        log_error "Agent ID required"
+        echo "Usage: $0 setup-workspace <agent-id>"
+        exit 1
     fi
     
-    echo ""
-    log_info "Skill sources (from openclaw.json):"
-    jq -r '.tools.skills.sources // {} | to_entries[] | "  \(.key): \(.value.enabled // false)"' "$CONFIG_FILE" 2>/dev/null || \
-        log_warn "  Skills not configured"
+    check_config
+    
+    local workspace=$(get_agent_workspace "$agent_id")
+    
+    if [[ -z "$workspace" || "$workspace" == "null" ]]; then
+        log_error "Agent '$agent_id' not found in configuration"
+        exit 1
+    fi
+    
+    local skills_dir="$workspace/skills"
+    
+    if [[ -d "$skills_dir" ]]; then
+        log_info "Skills directory already exists: $skills_dir"
+    else
+        mkdir -p "$skills_dir"
+        log_info "Created skills directory: $skills_dir"
+    fi
 }
 
 verify_config() {
@@ -172,57 +214,76 @@ verify_config() {
     
     log_step "Verifying skills configuration..."
     
-    # Check if skills is enabled
-    local skills_enabled=$(jq -r '.tools.skills.enabled // false' "$CONFIG_FILE")
-    
-    if [[ "$skills_enabled" != "true" ]]; then
-        log_error "Skills are NOT enabled in configuration"
+    # Check if skills section exists
+    if ! jq -e '.skills' "$CONFIG_FILE" > /dev/null 2>&1; then
+        log_error "'skills' section not found in openclaw.json"
         log_info "Add to openclaw.json:"
         cat << 'JSON'
-  "tools": {
-    "skills": {
-      "enabled": true,
-      "sources": {
-        "hub": { "enabled": true },
-        "project": { "enabled": true },
-        "user": { "enabled": true }
-      }
-    }
+  "skills": {
+    "load": {
+      "extraDirs": [],
+      "watch": true
+    },
+    "entries": {}
   }
 JSON
         exit 1
     fi
     
-    log_info "✓ Skills are enabled"
+    log_info "✓ Skills section exists"
     
-    # Check sources
-    local hub_enabled=$(jq -r '.tools.skills.sources.hub.enabled // false' "$CONFIG_FILE")
-    local project_enabled=$(jq -r '.tools.skills.sources.project.enabled // false' "$CONFIG_FILE")
-    local user_enabled=$(jq -r '.tools.skills.sources.user.enabled // false' "$CONFIG_FILE")
+    # Check load configuration
+    local watch_enabled=$(jq -r '.skills.load.watch // false' "$CONFIG_FILE")
+    if [[ "$watch_enabled" == "true" ]]; then
+        log_info "✓ Skill file watching enabled"
+    else
+        log_warn "✗ Skill file watching disabled"
+    fi
     
-    [[ "$hub_enabled" == "true" ]] && log_info "✓ ClawdHub source enabled" || log_warn "✗ ClawdHub source disabled"
-    [[ "$project_enabled" == "true" ]] && log_info "✓ Project source enabled (.agents/skills/)" || log_warn "✗ Project source disabled"
-    [[ "$user_enabled" == "true" ]] && log_info "✓ User source enabled (~/.config/agents/skills/)" || log_warn "✗ User source disabled"
+    # Check entries
+    local entry_count=$(jq -r '(.skills.entries // {}) | keys | length' "$CONFIG_FILE")
+    log_info "✓ $entry_count skill(s) configured in entries"
     
-    # Check agent-specific skills
+    # Check directories
     echo ""
-    log_step "Agent-specific skills:"
-    jq -r '.agents.list[] | "  \(.id): \(.skills // [] | length) skill(s)"' "$CONFIG_FILE"
+    log_step "Skill directories:"
+    
+    if [[ -d "$HOME/.openclaw/skills" ]]; then
+        local shared_count=$(ls -1 "$HOME/.openclaw/skills" 2>/dev/null | wc -l)
+        log_info "  ~/.openclaw/skills/: $shared_count skill(s)"
+    else
+        log_info "  ~/.openclaw/skills/: (not created)"
+    fi
+    
+    # Check agent workspaces
+    echo ""
+    log_step "Agent workspace skills:"
+    jq -r '.agents.list[].id' "$CONFIG_FILE" | while read -r agent_id; do
+        local workspace=$(get_agent_workspace "$agent_id")
+        local skills_dir="$workspace/skills"
+        
+        if [[ -d "$skills_dir" ]]; then
+            local count=$(ls -1 "$skills_dir" 2>/dev/null | wc -l)
+            log_info "  $agent_id: $count skill(s)"
+        else
+            log_warn "  $agent_id: no skills directory"
+        fi
+    done
 }
 
 # Main
 case "${1:-help}" in
-    install-global)
-        install_global "$2"
+    install)
+        install_skill "$2" "$3"
         ;;
-    install-agent)
-        install_agent "$2" "$3"
+    list)
+        list_skills "$2"
         ;;
     list-agents)
         list_agents
         ;;
-    list-skills)
-        list_skills "$2"
+    setup-workspace)
+        setup_workspace "$2"
         ;;
     verify)
         verify_config
