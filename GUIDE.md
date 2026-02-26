@@ -361,9 +361,28 @@ openclaw agents list --bindings
 # Start with Feishu integration
 openclaw start
 
-# Or start in background
+# Or start in background (daemon mode)
 openclaw start --daemon
 ```
+
+### Stopping and Restarting
+
+**Note:** OpenClaw does not have a `restart` command. To restart:
+
+```bash
+# Check if OpenClaw is running
+ps aux | grep openclaw
+
+# Stop OpenClaw
+pkill -f openclaw
+# Or: kill <PID>
+
+# Start again
+openclaw start
+# Or: openclaw start --daemon
+```
+
+**After configuration changes:** Always stop and start OpenClaw for changes to take effect.
 
 ### 3. Test Agent Connectivity
 
