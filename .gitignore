@@ -32,6 +32,7 @@ agents/main/
 
 # Runtime data directories
 credentials/
+delivery-queue/
 feishu/
 memory/
 
