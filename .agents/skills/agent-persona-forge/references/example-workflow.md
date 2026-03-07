@@ -127,7 +127,31 @@ project_skill:
     --output ./agents/lianmin/USER.md
 ```
 
-## Step 5: Final USER.md
+## Step 5: Generate Materials Report
+
+Generate a comprehensive report documenting all materials explored:
+
+```bash
+./scripts/generate-materials-report.sh \
+    --workspace ./lianmin-workspace \
+    --name "Lianmin Zheng" \
+    --homepage https://lmzheng.net/ \
+    --output ./lianmin-workspace/MATERIALS-REPORT.md
+```
+
+The generated report will include:
+
+| Section | Content |
+|---------|---------|
+| Executive Summary | Count of papers, projects, and homepage analyzed |
+| Homepage Analysis | URL, fetch date, sections analyzed |
+| Papers Explored | List of papers with metadata and extracted skills |
+| GitHub Projects | Repository details and commit analysis |
+| Analysis Artifacts | All generated skill and methodology extractions |
+| Data Quality | Coverage analysis and limitations |
+| File Inventory | Complete workspace structure |
+
+## Step 6: Final USER.md
 
 The generated USER.md synthesizes:
 
@@ -167,8 +191,21 @@ lianmin-workspace/
 │   ├── vllm_analysis.md    # Repository analysis
 │   ├── sglang/
 │   └── sglang_analysis.md
-└── skills-registry.yaml    # All extracted skills
+├── skills-registry.yaml    # All extracted skills
+└── MATERIALS-REPORT.md     # 📋 Documentation of all explored materials
 
 agents/lianmin/
 └── USER.md                 # Final persona
 ```
+
+### Materials Report Contents
+
+The `MATERIALS-REPORT.md` provides transparency by documenting:
+
+1. **What was analyzed** - Homepage URL, paper titles, GitHub repositories
+2. **When it was accessed** - Fetch/clone dates for reproducibility
+3. **What was extracted** - Skills, methodology, patterns from each source
+4. **What was missing** - Inaccessible papers, private repos, paywalled content
+5. **Data quality** - Coverage assessment and known limitations
+
+This report helps users understand the basis of the persona and identify opportunities for enhancement with additional sources.

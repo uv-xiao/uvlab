@@ -110,9 +110,11 @@ This persona was forged from:
   - [Project 1, role, date]
   - [Project 2, role, date]
 
+For complete details on all materials explored, see `MATERIALS-REPORT.md`.
+
 ## Skill Registry
 
-See `[skills-registry.yaml]` for extracted individual skills that can be used to create specialized agent skills.
+See `skills-registry.yaml` for extracted individual skills that can be used to create specialized agent skills.
 
 ---
 

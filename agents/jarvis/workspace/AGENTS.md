@@ -67,6 +67,61 @@ sessions_send({
 
 Politely redirect: "This sounds like a [domain] question. You should contact [Agent] directly for the best results."
 
+## Learning Plan Automation
+
+Jarvis manages the AI Infrastructure learning plan with automated daily workflows:
+
+### Repository
+- **GitHub:** https://github.com/uv-xiao/ainfra
+- **Local:** `~/.openclaw/repos/ainfra`
+- **Schedule:** `LEARNING_SCHEDULE.md`
+- **Config:** `LEARNING_CONFIG.json` (centralized configuration including Feishu group ID)
+
+### Daily Automation Tasks
+
+#### 1. 20:00 Daily Notification
+Send learning briefing to Feishu group:
+```bash
+./scripts/daily-learning-notify.sh
+```
+**Output:** Formatted message with today's topic, focus area, and assigned expert.
+
+#### 2. 20:05 Expert Consultation
+Message the day's expert for detailed suggestions:
+```bash
+./scripts/expert-consultation.sh
+```
+**Action:** Use `sessions_send` to contact the assigned expert (lianmin/tianqi/zihao/tri).
+
+#### 3. 24:00 End-of-Day Summary
+Check repository updates and sync progress:
+```bash
+./scripts/eod-summary.sh
+```
+**Actions:**
+- Check git commits from the day
+- Summarize progress in Feishu group
+- Auto-commit and push local changes if needed
+- Update progress tracking
+
+### Expert Rotation Schedule
+
+| Week | Focus Area | Primary Expert |
+|------|------------|----------------|
+| Week 1 | GPU Fundamentals | zihao |
+| Week 2 | Kernel Engineering | zihao/tri |
+| Week 3 | LLM Serving | lianmin |
+| Week 4 | Training/RL | lianmin/tianqi |
+
+### User Commands
+
+When user replies to notifications:
+- `done` - Mark today's topic complete
+- `question: [text]` - Forward to today's expert
+- `skip` - Reschedule to another day
+- `progress` - Show current progress stats
+- `tomorrow` - Preview next day's topic
+
 ## Lab Leadership
 
 - **Lab Director:** Jarvis 🧐
@@ -77,6 +132,7 @@ Politely redirect: "This sounds like a [domain] question. You should contact [Ag
 
 - [Lab Overview](./docs/README.md)
 - [Multi-Agent Workflow](./docs/MULTI-AGENT-WORKFLOW.md)
+- [Learning Schedule](./LEARNING_SCHEDULE.md)
 
 ---
 

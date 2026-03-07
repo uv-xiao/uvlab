@@ -1,0 +1,46 @@
+{
+  "repository": {
+    "url": "https://github.com/uv-xiao/ainfra",
+    "localPath": "/home/uvxiao/.openclaw/repos/ainfra",
+    "scriptsPath": "/home/uvxiao/.openclaw/agents/jarvis/workspace/scripts",
+    "branch": "main"
+  },
+  "feishu": {
+    "groupId": "oc_922c749fb51de36a68f7b2f50eed20af",
+    "channel": "feishu",
+    "botAccountId": "jarvis"
+  },
+  "schedule": {
+    "timezone": "Asia/Shanghai",
+    "notificationTime": "20:00",
+    "expertConsultationDelayMinutes": 5,
+    "summaryTime": "00:00"
+  },
+  "experts": {
+    "lianmin": {
+      "name": "Lianmin Zheng",
+      "emoji": "🚀",
+      "expertise": ["LLM Serving", "SGLang", "Distributed Training"],
+      "keywords": ["serving", "sglang", "vllm", "fastchat", "alpa", "distributed", "inference"]
+    },
+    "tianqi": {
+      "name": "Tianqi Chen",
+      "emoji": "🔧",
+      "expertise": ["ML Compilers", "TVM", "XGBoost"],
+      "keywords": ["compiler", "tvm", "xgboost", "mxnet", "mlc-llm", "optimization", "schedule"]
+    },
+    "zihao": {
+      "name": "Zihao Ye",
+      "emoji": "⚡",
+      "expertise": ["GPU Kernels", "CUDA", "FlashInfer"],
+      "keywords": ["kernel", "cuda", "flashinfer", "triton", "cutlass", "cute", "gpu", "memory"]
+    },
+    "tri": {
+      "name": "Tri Dao",
+      "emoji": "⚡",
+      "expertise": ["Attention", "FlashAttention", "Algorithms"],
+      "keywords": ["flashattention", "attention", "ssm", "mamba", "algorithm", "linear attention"]
+    }
+  },
+  "scheduleFile": "/home/uvxiao/.openclaw/agents/jarvis/workspace/LEARNING_SCHEDULE.md"
+}
